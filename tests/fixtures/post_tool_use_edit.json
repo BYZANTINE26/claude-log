@@ -1,0 +1,7 @@
+{
+  "session_id": "test-session-new",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {"file_path": "claude_log/logger.py"},
+  "tool_response": "File edited successfully"
+}

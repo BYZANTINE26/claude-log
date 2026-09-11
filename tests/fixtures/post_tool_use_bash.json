@@ -1,0 +1,7 @@
+{
+  "session_id": "test-session-new",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {"command": "pytest tests/"},
+  "tool_response": "5 passed in 0.42s"
+}

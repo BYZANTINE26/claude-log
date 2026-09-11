@@ -1,0 +1,5 @@
+{
+  "session_id": "test-session-resume",
+  "hook_event_name": "SessionStart",
+  "source": "resume"
+}

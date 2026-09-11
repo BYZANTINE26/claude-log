@@ -1,0 +1,5 @@
+{
+  "session_id": "test-session-new",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}
