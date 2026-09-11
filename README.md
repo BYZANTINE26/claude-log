@@ -34,39 +34,47 @@ with full chronological journey and deep-dive capabilities.
 
 ```
 📦 claude-log/
-├── INTENT.md           ← Problem, desired outcome, success criteria
-├── SPEC.md             ← System requirements and architecture
-├── README.md           ← This file
-├── CHANGELOG.md        ← Release history (created as development progresses)
+├── INTENT.md               ← Problem, desired outcome, success criteria
+├── SPEC.md                 ← System requirements and architecture
+├── README.md               ← This file
+├── CHANGELOG.md            ← Release history
+├── BACKLOG.md              ← Deferred items
+├── claude_log/             ← Core Python package (config, buffer, logger,
+│                              summarizer, metadata, hooks/)
+├── bin/                    ← Hook wrapper scripts Claude Code invokes
+├── tests/                  ← 37 tests covering the package above
 ├── docs/
 │   └── specs/
-│       └── core-logging.md    ← Component-level design
+│       └── core-logging.md ← Component-level design
 └── .claude/
-    ├── CLAUDE.md       ← Project conventions
-    ├── settings.json   ← Claude Code configuration
-    ├── logs/           ← Session logs (created at runtime)
-    ├── plans/          ← Planning artifacts
-    └── scratchpad/     ← Temporary experiments and scripts
+    ├── CLAUDE.md           ← Project conventions
+    ├── settings.json       ← Claude Code configuration + hook registration
+    ├── claude_log_config.json  ← claude-log's own runtime config
+    ├── logs/               ← Session logs (created at runtime, gitignored)
+    ├── plans/              ← Planning artifacts
+    └── scratchpad/         ← Temporary experiments and scripts
 ```
 
 ## Development Status
 
-🚧 **Early Development** — Currently in planning phase.
+🚧 **Core Logging MVP built** — see `CHANGELOG.md` for what's landed.
 
 - [x] Brainstorming & direction clarity
 - [x] Intent & specification
-- [ ] Implementation plan (`/plan`)
-- [ ] Core logging module
-- [ ] Summarization endpoint integration
-- [ ] Benchmarking suite
+- [x] Implementation plan (`.claude/plans/PLAN.md`)
+- [x] Core logging module (`claude_log/`, 37 tests passing)
+- [ ] Real summarization endpoint integration (currently rule-based only)
+- [ ] Benchmarking suite (vs. claude-mem)
 - [ ] Documentation & examples
 
-## Getting Started (Roadmap)
+## Getting Started
 
 1. Review `INTENT.md` for the problem and goals
 2. Review `SPEC.md` for system architecture
 3. Review `docs/specs/core-logging.md` for component design
-4. Follow the development plan (generated via `/plan`)
+4. Run the test suite: `python3 -m pytest tests/ -v`
+5. Hooks are already registered in `.claude/settings.json` — sessions in
+   this project log automatically to `.claude/logs/`
 
 ## Key Features (MVP)
 
