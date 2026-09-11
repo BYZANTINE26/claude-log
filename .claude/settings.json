@@ -1,0 +1,24 @@
+{
+  "enabledPlugins": {
+    "ponytail@ponytail": true,
+    "planning-with-files@planning-with-files": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "planning-with-files": {
+      "source": {
+        "source": "github",
+        "repo": "OthmanAdi/planning-with-files"
+      }
+    }
+  },
+  "plansDirectory": ".claude/plans",
+  "enabledMcpjsonServers": [
+    "skillspector"
+  ]
+}
