@@ -1,0 +1,11 @@
+# Runtime session logs and buffers — machine/session-specific, not source
+.claude/logs/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# OS
+.DS_Store
