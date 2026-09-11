@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "verbosity": "slim",
+  "recent_context_window": 10,
+  "summarization_endpoint": null,
+  "log_directory": ".claude/logs"
+}

@@ -20,5 +20,51 @@
   "plansDirectory": ".claude/plans",
   "enabledMcpjsonServers": [
     "skillspector"
-  ]
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Volumes/GBC/projects/claude-log/bin/claude_log_session_start.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Volumes/GBC/projects/claude-log/bin/claude_log_user_prompt_submit.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Volumes/GBC/projects/claude-log/bin/claude_log_post_tool_use.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Volumes/GBC/projects/claude-log/bin/claude_log_stop.py"
+          }
+        ]
+      }
+    ]
+  }
 }

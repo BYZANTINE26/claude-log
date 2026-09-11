@@ -58,16 +58,17 @@ resumability.
 
 ## Configuration
 
-### Environment/Settings
+### Config file: `.claude/claude_log_config.json`
+Kept separate from Claude Code's own `.claude/settings.json`, whose schema
+rejects unrecognized top-level keys. Only hook registration lives in
+`settings.json`; everything claude-log-specific lives here.
 ```json
 {
-  "logging": {
-    "enabled": true,
-    "verbosity": "slim",
-    "recent_context_window": 10,
-    "summarization_endpoint": "http://localhost:11434/api/generate",
-    "log_directory": ".claude/logs"
-  }
+  "enabled": true,
+  "verbosity": "slim",
+  "recent_context_window": 10,
+  "summarization_endpoint": "http://localhost:11434/api/generate",
+  "log_directory": ".claude/logs"
 }
 ```
 
