@@ -85,6 +85,33 @@ produced genuine, accurate `summary` text instead of `summary_failed` —
 the full pipeline (buffer -> git snapshot -> summarizer HTTP call ->
 log entry) works end-to-end with a real model.
 
+## Independent re-test after the git_snapshot.py fix (2026-09-13)
+Repeated the full scenario set from the first end-to-end test run, this
+time against a second fresh throwaway project
+(`/Volumes/GBC/projects/test_claude_log_v2`), to get independent evidence
+the `_hash_paths` fix (commit `7cf7046`) actually holds rather than trusting
+the same run that found the bug. All 9 scenarios (the original 8 plus a
+dedicated regression re-check) passed:
+
+- Scenario 8 (the regression re-check) explicitly reproduced the exact
+  failure shape — a new untracked directory with 3 files created alongside
+  an unrelated edit to an existing tracked-directory file, in the same
+  turn — and the log correctly reported all 4 files
+  (`newmodule/{one,two,three}.txt`, `trackedmodule/existing.txt`). Before
+  the fix this would have reported `files: []`.
+- Scenario 9 (the unreproduced `files: []` anomaly) still did not recur
+  across 5 fresh create-then-edit attempts — stays open in `BACKLOG.md`,
+  now with two independent non-reproduction attempts on record.
+- `~/.claude-log/internal.log` had zero new lines and zero `ERROR`s across
+  the entire run — no hook crashes, no summarizer failures, consistent
+  with every JSONL entry getting a genuine (non-`summary_failed`) summary.
+- Incidental, non-failure observation: in a test repo with no
+  `.gitignore` entry for `.claude-log/`, the plugin's own state writes
+  show up as "files touched" on whatever turn triggers them, since they
+  are genuinely part of the working tree's diff at that point. This is
+  correct behavior, not a bug — documented in `README.md`'s "Where Things
+  Live" section so a real user isn't confused by it.
+
 ## Issues Encountered
 | Issue | Resolution |
 |-------|------------|

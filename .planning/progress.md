@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 9 - Docs (BACKLOG.md done, CHANGELOG.md/README.md next)
+- **Phase:** 9 - Docs (done)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -49,6 +49,17 @@
   fixed in `git_snapshot.py`, regression test added, 57/57 suite passing.
   Follow-up confirmed a real summarization endpoint produces genuine
   summaries end-to-end.
+- Phase 9 done: `README.md` rewritten from its pre-implementation
+  planning-phase state to describe the shipped plugin (installation,
+  configuration, file layout, gitignore note); `CHANGELOG.md` created
+  (0.1.0). Ran an independent full re-test (subagent, fresh throwaway
+  project `test_claude_log_v2`) confirming the `git_snapshot.py` fix
+  holds — the exact regression shape (untracked directory + unrelated
+  tracked-file edit in one turn) now correctly reports all touched files.
+  All 9 scenarios passed; the `files: []` anomaly still did not
+  reproduce (now two independent non-reproduction attempts, see
+  findings.md); zero errors in claude-log's own internal log across the
+  run.
 
 ### Test Results
 | Test | Expected | Actual | Status |
@@ -62,6 +73,7 @@
 | `test_untracked_directory_does_not_blank_out_other_files` (regression) | pass | pass | ✅ |
 | Full suite | 57/57 | 57/57 | ✅ |
 | Real end-to-end test run (headless, 8 scenarios) | 8/8 pass | 7/8 pass, 1 bug found+fixed | ✅ (post-fix) |
+| Independent re-test post-fix (headless, 9 scenarios incl. regression re-check) | 9/9 pass | 9/9 pass | ✅ |
 
 ### Errors
 | Error | Resolution |

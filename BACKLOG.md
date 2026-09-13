@@ -54,7 +54,11 @@
   separately-found-and-fixed untracked-directory bug
   (`claude_log/git_snapshot.py::_hash_paths`, see CHANGELOG). Recorded
   as an unexplained one-off, not a confirmed bug — revisit if it recurs
-  with a reproducible trigger. Parked 2026-09-13.
+  with a reproducible trigger. Parked 2026-09-13. A second independent
+  re-test on 2026-09-13 (fresh throwaway project
+  `/Volumes/GBC/projects/test_claude_log_v2`, 5 repeated create-then-edit
+  attempts) also failed to reproduce it — still unexplained, still not
+  blocking, ticket stays open in case it recurs with a real trigger.
 
 - **[research]** How a prompt queued before the prior turn's `Stop` fires
   sequences against that turn's `prompt_id` is still undocumented (whether

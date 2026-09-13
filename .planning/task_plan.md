@@ -6,11 +6,10 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Update `BACKLOG.md`, `CHANGELOG.md`, `README.md` (Phase 9) — Phase 8's
-real-world test run is done, one bug found and fixed.
+Phase 9 is complete. Confirm with the user before merging into `dev`.
 
 ## Current Phase
-Phase 9
+Phase 9 (done)
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -97,8 +96,14 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 
 ### Phase 9: Docs
 - [x] Update `BACKLOG.md`
-- [ ] Update `CHANGELOG.md`, `README.md`
-- **Status:** in_progress
+- [x] Update `CHANGELOG.md`, `README.md` — README rewritten to describe the
+      shipped plugin (was still describing the pre-implementation planning
+      phase); `CHANGELOG.md` created for the first time (0.1.0)
+- [x] Independent full re-test after the git_snapshot.py fix, against a
+      second fresh throwaway project (`test_claude_log_v2`), confirming the
+      fix holds under fresh evidence and updating BACKLOG.md's anomaly
+      ticket with the second non-reproduction (see findings.md)
+- **Status:** done
 
 ## Decisions Made
 | Decision | Rationale |
