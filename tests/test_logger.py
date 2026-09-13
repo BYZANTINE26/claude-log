@@ -33,7 +33,9 @@ def test_initialize_or_resume_never_truncates_existing_log(project_root):
     logger.initialize_or_resume(project_root, "sess1")  # simulate a resume
     _append(project_root, "sess1", "second")
 
-    entries = logger._read_entries(project_root, "sess1")
+    path = log_file_path(project_root, "sess1")
+    with open(path) as log_file:
+        entries = [json.loads(line) for line in log_file]
     assert [entry["summary"] for entry in entries] == ["first", "second"]
 
 
@@ -101,6 +103,18 @@ def test_get_recent_entries_with_reingestion_starts_from_k(project_root):
     _append(project_root, "sess1", "after clear 1")
     recent = logger.get_recent_entries(project_root, "sess1", configured_window=10)
     assert len(recent) == 4  # 3 reingested + 1 new since reset
+
+
+def test_get_recent_entries_reads_correctly_across_a_chunk_boundary(project_root):
+    """`_tail_lines` seeks backward in 8192-byte chunks — write enough
+    entries to cross that boundary and confirm the seek-backward read
+    still lands on the exact right lines, not an off-by-one from a line
+    split across two chunks."""
+    for index in range(500):  # each entry line is small, but 500 of them
+        _append(project_root, "sess1", f"turn {index}")  # crosses 8192 bytes
+
+    recent = logger.get_recent_entries(project_root, "sess1", configured_window=3)
+    assert [entry["summary"] for entry in recent] == ["turn 497", "turn 498", "turn 499"]
 
 
 def test_get_recent_entries_window_caps_at_configured_max(project_root):

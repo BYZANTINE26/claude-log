@@ -57,24 +57,27 @@ def get_recent_entries(project_root: str, session_id: str, configured_window: in
     """Last `min(configured_window, reingested_count + entries_since_reset)`
     entries. With no reset on record — plain `startup`, or a **resumed**
     session, which never gets a reset marker — this is just the last
-    `configured_window` entries."""
-    entries = _read_entries(project_root, session_id)
+    `configured_window` entries, read with a backward seek so this never
+    scans a large log's earlier turns just to discard them (see
+    `BACKLOG.md #4`). Only a reset on record needs the log's total entry
+    count (`_count_entries`), and even that skips JSON-parsing every line."""
     state = _read_state(project_root, session_id)
 
     reset_at = state["reset_at_entry_index"]
     if reset_at is None:
         window = configured_window
     else:
-        entries_since_reset = max(len(entries) - reset_at, 0)
+        total = _count_entries(project_root, session_id)
+        entries_since_reset = max(total - reset_at, 0)
         reingested = state["reingested_count"] or 0
         window = min(configured_window, reingested + entries_since_reset)
 
-    return entries[-window:] if window > 0 else []
+    return _tail_entries(project_root, session_id, window) if window > 0 else []
 
 
 def mark_context_reset(project_root: str, session_id: str) -> None:
     """Called from SessionStart on `source: "clear"` (docs/adr/0007)."""
-    current_count = len(_read_entries(project_root, session_id))
+    current_count = _count_entries(project_root, session_id)
     _write_state(
         project_root, session_id, {"reset_at_entry_index": current_count, "reingested_count": None}
     )
@@ -87,13 +90,47 @@ def record_reingestion(project_root: str, session_id: str, count: int) -> None:
     _write_state(project_root, session_id, state)
 
 
-def _read_entries(project_root: str, session_id: str) -> list[dict]:
+def _count_entries(project_root: str, session_id: str) -> int:
+    """Total entry count, without JSON-parsing a single line."""
     path = log_file_path(project_root, session_id)
     try:
-        with open(path, "r", encoding="utf-8") as log_file:
-            return [json.loads(line) for line in log_file if line.strip()]
+        with open(path, "rb") as log_file:
+            return sum(1 for line in log_file if line.strip())
+    except (FileNotFoundError, OSError):
+        return 0
+
+
+def _tail_entries(project_root: str, session_id: str, count: int) -> list[dict]:
+    """Last `count` entries, seeking backward from end-of-file in chunks
+    instead of reading the whole log — cheap even for a large log when
+    only a handful of recent turns are needed."""
+    path = log_file_path(project_root, session_id)
+    try:
+        with open(path, "rb") as log_file:
+            lines = _tail_lines(log_file, count)
     except (FileNotFoundError, OSError):
         return []
+    return [json.loads(line) for line in lines]
+
+
+def _tail_lines(file_obj, count: int) -> list[str]:
+    chunk_size = 8192
+    file_obj.seek(0, os.SEEK_END)
+    position = file_obj.tell()
+    chunks = []
+    newlines_found = 0
+    # A boundary chunk may cut a line in half, so read one extra newline's
+    # worth before stopping, to guarantee `count` full lines are covered.
+    while position > 0 and newlines_found <= count:
+        read_size = min(chunk_size, position)
+        position -= read_size
+        file_obj.seek(position)
+        chunk = file_obj.read(read_size)
+        chunks.append(chunk)
+        newlines_found += chunk.count(b"\n")
+    data = b"".join(reversed(chunks))
+    lines = [line.decode("utf-8") for line in data.split(b"\n") if line.strip()]
+    return lines[-count:]
 
 
 def _read_state(project_root: str, session_id: str) -> dict:
