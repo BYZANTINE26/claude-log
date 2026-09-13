@@ -65,7 +65,11 @@ Never truncates an existing log.
 #### `get_recent_entries(log_path: str, session_id: str, project_root: str, configured_window: int) -> list[dict]`
 Returns the last `min(configured_window, reingested_count_or_0 +
 entries_since_reset)` entries — see `docs/adr/0007-*`. With no reset
-state on disk, behaves as a plain "last N entries" read.
+state on disk (plain `startup`, or a **resumed** session — `SessionStart`
+never writes a reset marker for `source: "resume"`), this collapses to a
+plain "last N entries" read: a resumed session's summarization
+immediately has full recent-log context, no `/claude-log-load` needed.
+The reset marker only ever exists after a `/clear`.
 
 #### `append_entry(log_path: str, entry: dict) -> None`
 Single `write()` append (sufficient under the single-writer assumption —

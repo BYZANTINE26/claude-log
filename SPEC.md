@@ -104,7 +104,11 @@ of fabricated text (see `docs/adr/0003-*`):
 - `Stop` — reads+clears the buffer, snapshots git again, computes
   touched files, summarizes, appends the log entry
 - `SessionStart` — on `source: "clear"`, records a context-reset marker
-  (see `docs/adr/0007-*`)
+  (see `docs/adr/0007-*`). On `source: "resume"` (or plain `startup`),
+  it does nothing: no reset marker exists, so the full configured
+  `recent_context_window` of prior log entries is available to the
+  summarizer immediately — a resumed session's context was never
+  cleared, so there's nothing to gate
 - `SessionEnd` — final orphan-buffer sweep for turns that never reached
   `Stop` (see `docs/adr/0007-*`)
 
