@@ -34,6 +34,18 @@
 | `bin/` wrapper scripts and `paths.py`/`session_state.py`/`internal_log.py` dropped from `PLAN.md`'s layout | Ponytail review: `bin/` was boilerplate for a per-project `PYTHONPATH` problem the plugin architecture (ADR-0001) already solves; the other three were single-caller, near-one-line modules that didn't earn a separate file — merged into `config.py`/`logger.py` |
 | `planning-with-files:planning-with-files` used for real this session | Plugin loaded after the user ran `/reload-plugins`; `skillspector` still unavailable to run the full pre-trust scan, so a manual read of its shell scripts (no network calls, no eval-style patterns) stood in as a lighter-weight check, at the user's explicit direction |
 
+- `UserPromptSubmit`'s real field is `prompt`, not `user_prompt` — a
+  second error from the original summary-table research pass (the first
+  was `SessionEnd`'s `end_reason` vs. real `reason`). Both now fixed in
+  `docs/specs/core-logging.md` before any hook code was written against
+  them.
+- `Stop`'s own per-event doc section states outright: "Does not run if
+  the stoppage occurred due to a user interrupt." This confirms (not
+  just designs defensively for) the need for ADR-0006's `turn_lost`
+  orphan sweep — every interrupted turn hits this path, not a
+  hypothetical edge case. Only the queued-prompt sequencing question
+  remains genuinely open (see `research` ticket in `BACKLOG.md`).
+
 ## Issues Encountered
 | Issue | Resolution |
 |-------|------------|

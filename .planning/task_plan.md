@@ -6,11 +6,11 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/hooks/_hook_io.py`, then the five hook modules and the
-`claude-log-load` skill.
+Assemble the plugin structure (`.claude-plugin/plugin.json`,
+`hooks/hooks.json`), test locally via `claude --plugin-dir`.
 
 ## Current Phase
-Phase 6
+Phase 7
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -65,18 +65,19 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 6: Hooks + `claude-log-load` skill
-- [ ] `hooks/_hook_io.py`
-- [ ] `hooks/{session_start,user_prompt_submit,message_display,stop,
+- [x] `hooks/_hook_io.py`
+- [x] `hooks/{session_start,user_prompt_submit,message_display,stop,
       session_end}.py`, each directly executable
-- [ ] `skills/claude-log-load/SKILL.md`
-- [ ] Hook sequence integration tests via canned fixtures, including an
-      interrupted-turn scenario
-- **Status:** in_progress
+- [x] `skills/claude-log-load/SKILL.md` + `claude_log/cli.py`
+- [x] Hook sequence integration tests (22) via canned hook_input dicts,
+      including orphan sweep (both UserPromptSubmit and SessionEnd) and
+      Stop's both marker/real-summary paths
+- **Status:** done
 
 ### Phase 7: Plugin assembly
 - [ ] `.claude-plugin/plugin.json`, `hooks/hooks.json`
 - [ ] Local test via `claude --plugin-dir`
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 8: Manual smoke test
 - [ ] Fresh session, resume, `/clear`, `/claude-log-load`, interrupt —

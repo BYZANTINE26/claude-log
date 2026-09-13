@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 6 - Hooks + `claude-log-load` skill
+- **Phase:** 7 - Plugin assembly
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -28,6 +28,13 @@
   passing.
 - Phase 5 (`summarizer.py`) done: OpenAI-compatible endpoint call, no
   rule-based fallback, 7 unit tests passing against a local http.server.
+- Corrected two more field-name errors ahead of Phase 6: UserPromptSubmit's
+  field is `prompt` not `user_prompt`; confirmed directly (not just
+  inferred) that `Stop` never fires on a Ctrl+C interrupt, closing part
+  of the open research ticket.
+- Phase 6 done: all five hooks, `_hook_io.py`, and the
+  `/claude-log-load` skill (`claude_log/cli.py`) implemented; 22
+  integration tests passing.
 
 ### Test Results
 | Test | Expected | Actual | Status |
@@ -37,7 +44,8 @@
 | `tests/test_buffer.py` (8 tests) | all pass | all pass | ✅ |
 | `tests/test_logger.py` (11 tests) | all pass | all pass | ✅ |
 | `tests/test_summarizer.py` (7 tests) | all pass | all pass | ✅ |
-| Full suite | 42/42 | 42/42 | ✅ |
+| Hook + CLI integration tests (22 tests) | all pass | all pass | ✅ |
+| Full suite | 56/56 | 56/56 | ✅ |
 
 ### Errors
 | Error | Resolution |
