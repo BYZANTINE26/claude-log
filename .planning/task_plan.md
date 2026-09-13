@@ -6,12 +6,11 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Manual smoke test: resume, `/clear`, `/claude-log-load`, interrupt
-scenarios in a real interactive session (basic turn logging already
-verified for real in Phase 7 via headless mode).
+Update `BACKLOG.md`, `CHANGELOG.md`, `README.md` (Phase 9) — Phase 8's
+real-world test run is done, one bug found and fixed.
 
 ## Current Phase
-Phase 8
+Phase 9
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -84,13 +83,22 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 
 ### Phase 8: Manual smoke test
 - [x] Basic turn logging — verified for real in Phase 7 (headless mode)
-- [ ] Fresh interactive session, resume, `/clear`, `/claude-log-load`,
-      interrupt — see `.claude/plans/PLAN.md`'s Verification section
-- **Status:** in_progress
+- [x] Full real-world test run delegated to a subagent against a fresh
+      test project (`/Volumes/GBC/projects/test_claude_log`), headless
+      `-p`/`--resume`, model `claude-haiku-4-5-20251001`: start+one turn,
+      multi-turn resume growth, resume-no-reset-marker, `/clear`,
+      `/claude-log-load`, `/compact`, interrupted turn (SIGINT), and the
+      queued-prompt research question — 7/8 scenarios passed cleanly, 1
+      surfaced a real bug (fixed, see findings.md and CHANGELOG.md)
+- [x] Follow-up: configured a real summarization endpoint
+      (`~/.claude-log/config.json`) and confirmed genuine (non-`summary_failed`)
+      summaries end-to-end
+- **Status:** done
 
 ### Phase 9: Docs
-- [ ] Update `BACKLOG.md`, `CHANGELOG.md`, `README.md`
-- **Status:** pending
+- [x] Update `BACKLOG.md`
+- [ ] Update `CHANGELOG.md`, `README.md`
+- **Status:** in_progress
 
 ## Decisions Made
 | Decision | Rationale |

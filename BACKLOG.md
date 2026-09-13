@@ -46,6 +46,16 @@
 - **[good-to-have]** Compression/encryption for archived log files. Parked
   2026-09-11.
 
+- **[research]** A real end-to-end test run (subagent, `--plugin-dir` +
+  a throwaway test project, `/Volumes/GBC/projects/test_claude_log`) hit
+  one `files: []` result on a genuine edit-only turn (editing an already-
+  created `hello.txt`) that could not be reproduced in 3 follow-up
+  attempts of the same create-then-edit sequence, and predates the
+  separately-found-and-fixed untracked-directory bug
+  (`claude_log/git_snapshot.py::_hash_paths`, see CHANGELOG). Recorded
+  as an unexplained one-off, not a confirmed bug — revisit if it recurs
+  with a reproducible trigger. Parked 2026-09-13.
+
 - **[research]** How a prompt queued before the prior turn's `Stop` fires
   sequences against that turn's `prompt_id` is still undocumented (whether
   `UserPromptSubmit` for the queued prompt can fire before the earlier
@@ -54,5 +64,10 @@
   (API errors go to `StopFailure` instead), so the interrupt case is no
   longer a research item — `docs/adr/0006-prompt-id-keyed-turn-buffers.md`'s
   `turn_lost` orphan sweep is confirmed necessary, not hypothetical.
-  Parked 2026-09-13, verify the remaining queueing question during the
-  Core Logging manual smoke test (`.claude/plans/PLAN.md`).
+  Partially exercised 2026-09-13 in the real end-to-end test run: two
+  `--resume <same session_id>` invocations launched back-to-back showed
+  no corruption or interleaving at the JSONL or buffer-file level, each
+  getting its own correctly-separated buffer and log entry — but this is
+  concurrent headless resumes, not confirmed proof of the interactive
+  "prompt queued while the model is still generating" scenario the
+  question is actually about. Parked 2026-09-13, still open.

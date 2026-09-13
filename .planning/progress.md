@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 8 - Manual smoke test (interactive scenarios remaining)
+- **Phase:** 9 - Docs (BACKLOG.md done, CHANGELOG.md/README.md next)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -42,6 +42,13 @@
   files list, summary_failed marker since no endpoint is configured yet,
   buffer cleaned up afterward). This is real evidence, not a guess —
   self-hosting caught the same class of real bugs it caught last time.
+- Phase 8 done: full real-world test run against a fresh test project
+  (`/Volumes/GBC/projects/test_claude_log`), delegated to a subagent,
+  covering every PLAN.md Verification scenario plus the queued-prompt
+  research question. 7/8 passed; 1 found a real bug (see findings.md) —
+  fixed in `git_snapshot.py`, regression test added, 57/57 suite passing.
+  Follow-up confirmed a real summarization endpoint produces genuine
+  summaries end-to-end.
 
 ### Test Results
 | Test | Expected | Actual | Status |
@@ -52,7 +59,9 @@
 | `tests/test_logger.py` (11 tests) | all pass | all pass | ✅ |
 | `tests/test_summarizer.py` (7 tests) | all pass | all pass | ✅ |
 | Hook + CLI integration tests (22 tests) | all pass | all pass | ✅ |
-| Full suite | 56/56 | 56/56 | ✅ |
+| `test_untracked_directory_does_not_blank_out_other_files` (regression) | pass | pass | ✅ |
+| Full suite | 57/57 | 57/57 | ✅ |
+| Real end-to-end test run (headless, 8 scenarios) | 8/8 pass | 7/8 pass, 1 bug found+fixed | ✅ (post-fix) |
 
 ### Errors
 | Error | Resolution |

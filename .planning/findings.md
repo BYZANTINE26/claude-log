@@ -46,6 +46,45 @@
   hypothetical edge case. Only the queued-prompt sequencing question
   remains genuinely open (see `research` ticket in `BACKLOG.md`).
 
+## Real end-to-end test run (2026-09-13, subagent-delegated)
+Ran against a fresh test project (`/Volumes/GBC/projects/test_claude_log`),
+headless `claude --plugin-dir /Volumes/GBC/projects/claude-log --model
+claude-haiku-4-5-20251001 -p ...`/`--resume`, covering every scenario in
+`.claude/plans/PLAN.md`'s Verification section plus the open research
+question. 7 of 8 scenarios passed cleanly (start+one turn, multi-turn
+resume growth, resume-never-writes-a-reset-marker, `/clear` genuinely
+triggers a reset marker via headless `-p "/clear"`, `/claude-log-load`
+via its plugin-qualified command name, `/compact` doesn't disturb state,
+and an interrupted turn via SIGINT correctly produces a `turn_lost`
+marker through the `SessionEnd` sweep path).
+
+**Real bug found and fixed**: `git_snapshot.py::_hash_paths` silently
+emptied the *entire* dirty-hash map for a snapshot whenever any wholly
+untracked directory existed in the working tree (e.g. claude-log's own
+`.claude-log/.state/`, created by the `/clear` test itself) — because
+`git status --porcelain` folds an untracked directory into one
+unhashable line, and the single batched `git hash-object` call over all
+dirty paths fails outright on it, with `_run()`'s failure-swallowing
+silently discarding every other path's hash too, not just the
+directory's. Fixed with `--untracked-files=all` on the status call plus
+an `os.path.isfile` filter before hashing (defense in depth for
+submodule-like paths `--untracked-files=all` doesn't expand). Added
+`test_untracked_directory_does_not_blank_out_other_files` as a permanent
+regression test. See `CHANGELOG.md` and the commit for full detail.
+
+**Two items left genuinely open** (moved to `BACKLOG.md`): a single
+`files: []` result on a real edit-only turn that could not be reproduced
+in 3 follow-up attempts (predates the directory bug, unexplained); and
+the queued-prompt research question, only partially exercised (two
+concurrent `--resume` calls showed no corruption, but that's not proof
+of the interactive "prompt queued mid-generation" scenario specifically).
+
+**Also confirmed**: after the test run, a real summarization endpoint
+was configured in `~/.claude-log/config.json` and two further turns
+produced genuine, accurate `summary` text instead of `summary_failed` —
+the full pipeline (buffer -> git snapshot -> summarizer HTTP call ->
+log entry) works end-to-end with a real model.
+
 ## Issues Encountered
 | Issue | Resolution |
 |-------|------------|
