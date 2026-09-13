@@ -32,11 +32,6 @@
   tracked as an `INTENT.md` success criterion, not blocking Core Logging.
   Parked 2026-09-11.
 
-- **[feature]** Manual command for the user to ingest a configurable last-K
-  log entries into a fresh (post-`/clear`) context window — settled as the
-  `/claude-log-load [count]` skill in `docs/adr/0007-session-lifecycle-and-context-reset-window.md`,
-  not yet implemented. Parked 2026-09-11.
-
 - **[good-to-have]** Viewing/querying UI or CLI for browsing a session log.
   Parked 2026-09-11.
 
