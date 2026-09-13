@@ -6,11 +6,10 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/config.py` (settings load, path resolution, internal
-logger setup).
+Write `claude_log/git_snapshot.py` (commit hash + hashed dirty-file map).
 
 ## Current Phase
-Phase 1
+Phase 2
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -24,18 +23,18 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 1: `config.py`
-- [ ] `DEFAULT_CONFIG`, `load_config()` — reads `~/.claude-log/config.json`
-- [ ] Path resolution: `plugin_home`, `project_log_dir`, `log_file_path`,
+- [x] `DEFAULT_CONFIG`, `load_config()` — reads `~/.claude-log/config.json`
+- [x] Path resolution: `plugin_home`, `project_log_dir`, `log_file_path`,
       `buffer_path`, `state_path`
-- [ ] `get_logger()` — rotating internal log, level from config
-- [ ] Unit tests
-- **Status:** in_progress
+- [x] `get_logger()` — rotating internal log, level from config
+- [x] Unit tests (7, all passing)
+- **Status:** done
 
 ### Phase 2: `git_snapshot.py`
 - [ ] `snapshot_git_state()` — commit hash + hashed dirty-file map
 - [ ] `files_touched()` — commit-diff union hash-diff, per ADR-0004
 - [ ] Unit tests, including the pre-existing-dirty-file exclusion case
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 3: `buffer.py`
 - [ ] `start_turn`, `append_assistant_message`, `read_and_clear`

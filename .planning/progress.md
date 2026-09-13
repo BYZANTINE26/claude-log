@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 1 - `config.py`
+- **Phase:** 2 - `git_snapshot.py`
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -17,10 +17,13 @@
   moved its output into `.planning/` and populated it with this
   branch's real phases from `PLAN.md`.
 - Phase 0 (remaining field-name ambiguity) closed — see findings.md.
+- Phase 1 (`config.py`) done: settings load, path resolution, rotating
+  internal logger, 7 unit tests passing.
 
 ### Test Results
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
+| `tests/test_config.py` (7 tests) | all pass | all pass | ✅ |
 
 ### Errors
 | Error | Resolution |
