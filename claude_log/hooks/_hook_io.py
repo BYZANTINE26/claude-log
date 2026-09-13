@@ -8,6 +8,10 @@ wrong field name degrades a hook to a generic fallback instead of crashing
 the user's session.
 """
 
+# TODO: Go through the hooks documentation at -
+#   https://code.claude.com/docs/en/hooks.md and understand the hooks schema
+#   then if required modify this code accordingly.
+
 import json
 import os
 import sys

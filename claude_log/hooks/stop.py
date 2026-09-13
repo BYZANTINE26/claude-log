@@ -45,6 +45,7 @@ def main() -> None:
         log_path, config["recent_context_window"]
     )
     summary = summarizer.summarize(recent_entries, buffered_turn, config)
+    # TODO: are we not using the claude's response??????
 
     turn_id = f"{session_id}:{logger.count_entries(log_path)}"
     timestamp = datetime.now(timezone.utc).isoformat()

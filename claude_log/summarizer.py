@@ -73,7 +73,7 @@ def rule_based_summary(current_turn: dict) -> str:
     return _clip(summary)
 
 
-def _clip(summary: str, max_length: int = 200) -> str:
+def _clip(summary: str, max_length: int = 200) -> str: # TODO: remove this function, this will cut off contextual flow
     if len(summary) <= max_length:
         return summary
     return summary[: max_length - 1] + "…"
