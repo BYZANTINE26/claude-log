@@ -65,7 +65,11 @@ Never truncates an existing log.
 #### `get_recent_entries(log_path: str, session_id: str, project_root: str, configured_window: int) -> list[dict]`
 Returns the last `min(configured_window, reingested_count_or_0 +
 entries_since_reset)` entries — see `docs/adr/0007-*`. With no reset
-state on disk, behaves as a plain "last N entries" read.
+state on disk (plain `startup`, or a **resumed** session — `SessionStart`
+never writes a reset marker for `source: "resume"`), this collapses to a
+plain "last N entries" read: a resumed session's summarization
+immediately has full recent-log context, no `/claude-log-load` needed.
+The reset marker only ever exists after a `/clear`.
 
 #### `append_entry(log_path: str, entry: dict) -> None`
 Single `write()` append (sufficient under the single-writer assumption —
@@ -114,6 +118,34 @@ deletes them. Called from `UserPromptSubmit` and `SessionEnd` (see
 Shipped via a personal skills-directory plugin (`docs/adr/0001-*`), so
 registration lives in the plugin's `hooks/hooks.json`, not any single
 project's `.claude/settings.json`.
+
+Confirmed input fields, from the hooks reference's per-event sections
+(not just its summary table — see PLAN.md's note on the one remaining
+ambiguity):
+- **`UserPromptSubmit`**: `session_id, cwd, prompt_id, prompt, ...`
+  (corrected: an earlier summary-table pass wrongly said `user_prompt`)
+- **`MessageDisplay`**: `session_id, cwd, prompt_id, turn_id, message_id,
+  index, final, delta` — `prompt_id` is a universal common field (present
+  on every event once the first prompt has been submitted), so it's
+  expected alongside `MessageDisplay`'s own `turn_id`/`message_id`, even
+  though the doc's own example payload happens not to show it. Fires once
+  per batch of newly-completed lines (interactive) or once with the full
+  message (`index: 0, final: true`) in non-interactive/SDK runs. `delta`
+  is incremental text, not the full message, in the interactive case —
+  the buffer must accumulate `delta` across calls for the same
+  `message_id`, using `final` to know when a message is complete.
+- **`Stop`**: `session_id, cwd, prompt_id, last_assistant_message, ...`.
+  **Does not fire on a Ctrl+C interrupt** (confirmed directly from the
+  hooks reference's own Stop section) — this is exactly why the
+  `turn_lost` orphan-sweep mechanism (docs/adr/0006) exists, not a
+  hypothetical edge case
+- **`SessionStart`**: `session_id, cwd, source, ...` — `source` is
+  `startup|resume|clear|compact|fork`, present directly in the input
+  (not only inferred from which matcher fired), confirmed from the
+  hooks reference's own SessionStart section (see ADR-0007)
+- **`SessionEnd`**: `session_id, cwd, reason` — `reason` is one of
+  `clear|resume|logout|prompt_input_exit|other`; fires on `/clear` and
+  `/resume` too, not only true session termination.
 
 ### Summarization Endpoint
 OpenAI-compatible `/v1/chat/completions`. Reference request shape (not

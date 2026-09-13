@@ -1,0 +1,8 @@
+{
+  "name": "claude-log",
+  "description": "Append-only, token-efficient session logging for Claude Code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "BYZANTINE26"
+  }
+}

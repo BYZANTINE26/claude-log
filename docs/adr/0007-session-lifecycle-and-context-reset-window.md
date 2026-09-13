@@ -42,7 +42,13 @@ present for the ending `session_id` (per ADR-0006's `turn_lost` marker
 mechanism) is marked and cleaned up within `SessionEnd`'s ~1.5-second
 budget, covering the case where a session terminates (crash, `/exit`)
 after an interrupted final turn with no subsequent `UserPromptSubmit` to
-trigger the usual sweep.
+trigger the usual sweep. `SessionEnd` also fires with `reason: "clear"`
+or `"resume"` (not just true termination) — confirmed from the hooks
+reference's dedicated `SessionEnd` section, correcting an earlier
+summary-table pass that mis-stated the field as `end_reason` instead of
+`reason`. The orphan sweep runs unconditionally on every `SessionEnd`
+regardless of `reason`, so this doesn't change the design, only confirms
+it also catches a turn interrupted right before a `/clear`.
 
 ## Considered Options
 - An explicit incrementing "window size" counter, bumped by +1 each turn

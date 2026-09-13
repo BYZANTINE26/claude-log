@@ -46,11 +46,48 @@
 - **[good-to-have]** Compression/encryption for archived log files. Parked
   2026-09-11.
 
-- **[research]** Confirm empirically whether `Stop` fires on a Ctrl+C
-  interrupt mid-generation, and how a prompt queued before the prior turn's
-  `Stop` fires sequences against that turn's `prompt_id` — undocumented in
-  Claude Code's hooks reference as of 2026-09-13. Current design
-  (`docs/adr/0006-prompt-id-keyed-turn-buffers.md`) is safe either way —
-  orphaned buffers always surface as `turn_lost` markers — but the actual
-  behavior is unverified live. Parked 2026-09-13, verify during the Core
-  Logging manual smoke test (`.claude/plans/PLAN.md`).
+- **[research]** A real end-to-end test run (subagent, `--plugin-dir` +
+  a throwaway test project, `/Volumes/GBC/projects/test_claude_log`) hit
+  one `files: []` result on a genuine edit-only turn (editing an already-
+  created `hello.txt`) that could not be reproduced in 3 follow-up
+  attempts of the same create-then-edit sequence, and predates the
+  separately-found-and-fixed untracked-directory bug
+  (`claude_log/git_snapshot.py::_hash_paths`, see CHANGELOG). Recorded
+  as an unexplained one-off, not a confirmed bug — revisit if it recurs
+  with a reproducible trigger. Parked 2026-09-13. A second independent
+  re-test on 2026-09-13 (fresh throwaway project
+  `/Volumes/GBC/projects/test_claude_log_v2`, 5 repeated create-then-edit
+  attempts) also failed to reproduce it — still unexplained, still not
+  blocking, ticket stays open in case it recurs with a real trigger.
+
+- **[research]** How a prompt queued before the prior turn's `Stop` fires
+  sequences against that turn's `prompt_id` is still undocumented (whether
+  `UserPromptSubmit` for the queued prompt can fire before the earlier
+  turn's `Stop`). Confirmed separately, directly from the hooks reference's
+  own Stop section: `Stop` does **not** fire on a Ctrl+C interrupt at all
+  (API errors go to `StopFailure` instead), so the interrupt case is no
+  longer a research item — `docs/adr/0006-prompt-id-keyed-turn-buffers.md`'s
+  `turn_lost` orphan sweep is confirmed necessary, not hypothetical.
+  Partially exercised 2026-09-13 in the real end-to-end test run: two
+  `--resume <same session_id>` invocations launched back-to-back showed
+  no corruption or interleaving at the JSONL or buffer-file level, each
+  getting its own correctly-separated buffer and log entry — but this is
+  concurrent headless resumes, not confirmed proof of the interactive
+  "prompt queued while the model is still generating" scenario the
+  question is actually about. Parked 2026-09-13, still open.
+
+- **[enhancement]** `~/.claude-log/internal.log`'s `debug`/`info` levels are
+  currently dead weight — `claude_log/config.py::get_logger`'s level
+  filtering and rotating handler work correctly, but no code path calls
+  `logger.debug(...)` or `logger.info(...)` anywhere; only `warning`
+  (`summarizer.py`: no endpoint configured) and `error` (each hook's
+  caught-exception handler, `summarizer.py`'s failed endpoint call) are
+  ever logged. Found 2026-09-13 while reviewing why the independent
+  post-fix re-test's `internal.log` had zero new lines despite
+  `log_level: "debug"` being set — expected, since the re-test hit no
+  failures, but it means `debug`/`info` currently show nothing even when
+  set. If pursued: log each hook's entry/key decision (buffer started,
+  git snapshot taken, summarization call made) at `debug`, successful
+  turn completion at `info`, so the level setting is actually meaningful.
+  Parked 2026-09-13, not blocking — the log's original purpose (crash/
+  failure diagnostics) is unaffected.

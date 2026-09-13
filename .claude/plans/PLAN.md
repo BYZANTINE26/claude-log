@@ -184,10 +184,14 @@ importing `claude_log` — the one-line equivalent of what the dropped
 `bin/` wrappers did, without a second file per hook.
 
 ## Order of implementation
-0. **Ground-truth capture**: confirm real field names for `MessageDisplay`
-   and `SessionEnd` (unverified by the earlier hooks-doc fetch — only
-   `Stop`/`UserPromptSubmit`/`SessionStart` common fields were confirmed
-   directly) via a throwaway logging hook, one real turn, this project.
+0. **One remaining field-name ambiguity**: `MessageDisplay`'s documented
+   example payload doesn't show `prompt_id` even though it's supposedly a
+   common field (v2.1.196+) — only its own `turn_id`/`message_id`. The
+   hook code reads `hook_input.get("prompt_id") or hook_input.get("turn_id")`
+   defensively rather than guessing which is present; confirmed for real
+   during the manual smoke test (step 8), not blocking implementation.
+   All other fields for all five hooks are confirmed directly from the
+   hooks reference's per-event sections (not just the summary table).
 1. `config.py` — settings load, path resolution, internal logger setup;
    pure/independent, unit tested immediately.
 2. `git_snapshot.py` — the riskiest new piece (hash-diff correctness for

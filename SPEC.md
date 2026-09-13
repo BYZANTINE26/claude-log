@@ -96,12 +96,19 @@ of fabricated text (see `docs/adr/0003-*`):
 ### Claude Code Hooks
 - `UserPromptSubmit` — records the prompt and a git snapshot
   (`commit_before` + hashed dirty-file set) into the turn's buffer
-- `MessageDisplay` — appends each displayed assistant message to the
-  same buffer (see `docs/adr/0005-*`)
+- `MessageDisplay` — accumulates each message's `delta` text by
+  `message_id` (delivered incrementally in interactive sessions, in full
+  in non-interactive/SDK runs — see `docs/specs/core-logging.md`), and
+  appends the completed message (on `final: true`) to the turn's buffer
+  (see `docs/adr/0005-*`)
 - `Stop` — reads+clears the buffer, snapshots git again, computes
   touched files, summarizes, appends the log entry
 - `SessionStart` — on `source: "clear"`, records a context-reset marker
-  (see `docs/adr/0007-*`)
+  (see `docs/adr/0007-*`). On `source: "resume"` (or plain `startup`),
+  it does nothing: no reset marker exists, so the full configured
+  `recent_context_window` of prior log entries is available to the
+  summarizer immediately — a resumed session's context was never
+  cleared, so there's nothing to gate
 - `SessionEnd` — final orphan-buffer sweep for turns that never reached
   `Stop` (see `docs/adr/0007-*`)
 
