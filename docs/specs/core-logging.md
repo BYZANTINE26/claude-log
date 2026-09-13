@@ -115,6 +115,24 @@ Shipped via a personal skills-directory plugin (`docs/adr/0001-*`), so
 registration lives in the plugin's `hooks/hooks.json`, not any single
 project's `.claude/settings.json`.
 
+Confirmed input fields, from the hooks reference's per-event sections
+(not just its summary table — see PLAN.md's note on the one remaining
+ambiguity):
+- **`UserPromptSubmit`**: `session_id, cwd, prompt_id, user_prompt, ...`
+- **`MessageDisplay`**: `session_id, cwd, turn_id, message_id, index,
+  final, delta` — fires once per batch of newly-completed lines
+  (interactive) or once with the full message (`index: 0, final: true`)
+  in non-interactive/SDK runs. `delta` is incremental text, not the full
+  message, in the interactive case — the buffer must accumulate `delta`
+  across calls for the same `message_id`, using `final` to know when a
+  message is complete.
+- **`Stop`**: `session_id, cwd, prompt_id, last_assistant_message, ...`
+- **`SessionStart`**: `session_id, cwd, ...`, matcher supports
+  `startup|resume|clear|compact|fork` (see ADR-0007)
+- **`SessionEnd`**: `session_id, cwd, reason` — `reason` is one of
+  `clear|resume|logout|prompt_input_exit|other`; fires on `/clear` and
+  `/resume` too, not only true session termination.
+
 ### Summarization Endpoint
 OpenAI-compatible `/v1/chat/completions`. Reference request shape (not
 committed as runnable code — `curl.sh` at the repo root is a local,

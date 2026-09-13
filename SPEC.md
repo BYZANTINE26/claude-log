@@ -96,8 +96,11 @@ of fabricated text (see `docs/adr/0003-*`):
 ### Claude Code Hooks
 - `UserPromptSubmit` — records the prompt and a git snapshot
   (`commit_before` + hashed dirty-file set) into the turn's buffer
-- `MessageDisplay` — appends each displayed assistant message to the
-  same buffer (see `docs/adr/0005-*`)
+- `MessageDisplay` — accumulates each message's `delta` text by
+  `message_id` (delivered incrementally in interactive sessions, in full
+  in non-interactive/SDK runs — see `docs/specs/core-logging.md`), and
+  appends the completed message (on `final: true`) to the turn's buffer
+  (see `docs/adr/0005-*`)
 - `Stop` — reads+clears the buffer, snapshots git again, computes
   touched files, summarizes, appends the log entry
 - `SessionStart` — on `source: "clear"`, records a context-reset marker
