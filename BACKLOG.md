@@ -1,32 +1,41 @@
 # Backlog
 
-Tickets parked for later. Each entry: flag, one-line summary, and where/when
-it was parked.
+Tickets parked for later. Each entry is one line: a summary plus when it
+was parked, grouped under its flag.
 
 ## technical-debt
-- Mid-session crash (Stop hook never fires) leaves stale turn-buffer data
-  that silently merges into the next turn's summary. Parked during Core
-  Logging MVP planning (2026-09-11) — accepted as an MVP limitation, see
-  `.claude/plans/PLAN.md`.
-- No file locking on the session log; two sessions sharing a `session_id`
-  would corrupt it (single-writer assumption, unhandled). Parked during Core
-  Logging MVP planning (2026-09-11).
-- No log rotation or retention policy — session logs grow unbounded. Parked
-  during Core Logging MVP planning (2026-09-11).
+- No file locking on the session log; concurrent writers sharing a
+  `session_id` would corrupt it. Parked 2026-09-11.
+- No log rotation or retention policy — session logs grow unbounded.
+  Parked 2026-09-11.
+- `commit_before`/`commit_after` become dangling refs if amended,
+  rebased, or reset after being logged. Parked 2026-09-13.
+
+## enhancement
+- `get_recent_entries` re-reads the whole JSONL file every turn; fine at
+  MVP scale, switch to a seek-from-end read if logs grow large. Parked
+  2026-09-13.
 
 ## feature
-- Real local summarization endpoint integration (e.g. Ollama) to replace the
-  rule-based stub summarizer. Parked during Core Logging MVP planning
-  (2026-09-11) — stub is deliberate for MVP, see `.claude/plans/PLAN.md`.
-- Benchmarking suite comparing claude-log vs. claude-mem on token usage,
-  context fidelity, and resumability. This is an INTENT.md success
-  criterion, tracked as its own phase after the MVP — not blocking it.
-  Parked during Core Logging MVP planning (2026-09-11).
+- Real local summarization model behind the OpenAI-compatible endpoint
+  contract, to replace/complement the rule-based fallback. Parked
+  2026-09-11.
+- Benchmarking suite vs. claude-mem on token usage, context fidelity, and
+  resumability — its own phase post-MVP (INTENT.md success criterion).
+  Parked 2026-09-11.
+- Manual command for the user to ingest a configurable last-K log entries
+  into a fresh (post-`/clear`) context window. Parked 2026-09-11.
 
 ## good-to-have
-- Viewing/querying UI or CLI for browsing a session log. Parked during Core
-  Logging MVP planning (2026-09-11).
+- Viewing/querying UI or CLI for browsing a session log. Parked
+  2026-09-11.
 - Export a session log to markdown/CSV; search/filter across multiple
-  session logs. Parked during Core Logging MVP planning (2026-09-11).
-- Compression/encryption for archived log files. Parked during Core Logging
-  MVP planning (2026-09-11).
+  session logs. Parked 2026-09-11.
+- Compression/encryption for archived log files. Parked 2026-09-11.
+
+## research
+- Confirm empirically whether `Stop` fires on a Ctrl+C interrupt, and how
+  a prompt queued mid-generation sequences against the prior turn's
+  `prompt_id` — undocumented; current design (orphaned buffers surface as
+  `turn_lost` markers) is safe either way but unverified live. Parked
+  2026-09-13.
