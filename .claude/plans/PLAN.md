@@ -49,28 +49,27 @@ See `docs/adr/0001` through `0007` for full reasoning. Summary:
 .claude-plugin/
   plugin.json                # name, description, version
 hooks/
-  hooks.json                 # registers all 5 hooks against bin/ scripts
+  hooks.json                 # registers all 5 hooks directly against
+                              # claude_log/hooks/*.py — no wrapper scripts,
+                              # plugins resolve their own root, so the
+                              # sys.path-shim-per-file that per-project
+                              # hook registration needed doesn't apply
 skills/
   claude-log-load/
     SKILL.md                 # /claude-log-load [count]
-bin/
-  claude_log_session_start.py
-  claude_log_user_prompt_submit.py
-  claude_log_message_display.py
-  claude_log_stop.py
-  claude_log_session_end.py
 claude_log/
   __init__.py
-  config.py          # load ~/.claude-log/config.json, DEFAULT_CONFIG
-  paths.py            # home-level + project-level path resolution
+  config.py          # load ~/.claude-log/config.json, DEFAULT_CONFIG,
+                      # home/project path resolution, rotating internal
+                      # logger setup — one "plugin environment" module
   buffer.py           # atomic per-turn buffer (prompt, assistant_messages,
-                       # commit_before, dirty_before)
-  logger.py            # initialize_or_resume, append_entry,
-                       # get_recent_entries (window formula), build_entry
+                       # commit_before, dirty_before), orphan sweep
+  logger.py            # initialize_or_resume, append_entry, build_entry,
+                       # get_recent_entries + its window-size formula
+                       # (reads/writes .state/<session_id>.json itself —
+                       # the only caller of that state, so it lives here)
   summarizer.py        # summarize(), call_openai_compatible_endpoint()
   git_snapshot.py       # snapshot_git_state(), files_touched()
-  session_state.py      # read/write .state/<session_id>.json, window math
-  internal_log.py       # rotating internal logger setup
   hooks/
     __init__.py
     _hook_io.py
@@ -85,11 +84,16 @@ tests/
   test_logger.py
   test_summarizer.py
   test_git_snapshot.py
-  test_session_state.py
   test_hooks_*.py (one per hook)
   fixtures/
 pyproject.toml
 ```
+Dropped from the original sketch: a `bin/` directory of thin wrapper
+scripts and separate `paths.py`/`session_state.py`/`internal_log.py`
+modules — each was either boilerplate for a problem the plugin
+architecture already solves (`bin/`), or a handful of one-line functions
+with a single caller that didn't earn a separate file (ponytail:
+"fewest files possible... once you understand the problem").
 
 ## Module interfaces (signatures only)
 
@@ -102,15 +106,14 @@ DEFAULT_CONFIG = {
     "log_level": "info",
 }
 def load_config() -> dict: ...  # reads ~/.claude-log/config.json
-```
 
-**paths.py**
-```python
 def plugin_home() -> str: ...                  # ~/.claude-log
 def project_log_dir(project_root: str) -> str: ...  # <project>/.claude-log
 def log_file_path(project_root: str, session_id: str) -> str: ...
 def buffer_path(project_root: str, session_id: str, prompt_id: str) -> str: ...
 def state_path(project_root: str, session_id: str) -> str: ...
+
+def get_logger() -> logging.Logger: ...  # rotating handler, level from config
 ```
 
 **buffer.py**
@@ -128,9 +131,14 @@ def sweep_orphaned(project_root: str, session_id: str,
 def initialize_or_resume(project_root: str, session_id: str) -> str: ...
 def get_recent_entries(project_root: str, session_id: str,
                         configured_window: int) -> list[dict]: ...
+    # internally: reads/writes .state/<session_id>.json (mark_context_reset,
+    # record_reingestion happen via this module too) and applies
+    # min(configured_window, reingested_count + entries_since_reset)
 def append_entry(log_path: str, entry: dict) -> None: ...
 def build_entry(turn_id: str, timestamp: str, summary: str | None,
                  refs: dict, failure_flag: str | None = None) -> dict: ...
+def mark_context_reset(project_root: str, session_id: str) -> None: ...
+def record_reingestion(project_root: str, session_id: str, count: int) -> None: ...
 ```
 
 **summarizer.py**
@@ -153,20 +161,6 @@ def files_touched(commit_before, commit_after, dirty_before, dirty_after,
                    project_root: str) -> list[str]: ...
 ```
 
-**session_state.py**
-```python
-def mark_context_reset(project_root: str, session_id: str,
-                        current_entry_count: int) -> None: ...
-def record_reingestion(project_root: str, session_id: str, count: int) -> None: ...
-def effective_window(project_root: str, session_id: str,
-                      configured_window: int, current_entry_count: int) -> int: ...
-```
-
-**internal_log.py**
-```python
-def get_logger() -> logging.Logger: ...  # rotating handler, level from config
-```
-
 ## Plugin manifest sketch
 ```json
 // .claude-plugin/plugin.json
@@ -176,38 +170,42 @@ def get_logger() -> logging.Logger: ...  # rotating handler, level from config
 // hooks/hooks.json
 {
   "hooks": {
-    "SessionStart": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/claude_log_session_start.py"}]}],
-    "UserPromptSubmit": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/claude_log_user_prompt_submit.py"}]}],
-    "MessageDisplay": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/claude_log_message_display.py"}]}],
-    "Stop": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/claude_log_stop.py"}]}],
-    "SessionEnd": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/claude_log_session_end.py"}]}]
+    "SessionStart": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_start.py"}]}],
+    "UserPromptSubmit": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/user_prompt_submit.py"}]}],
+    "MessageDisplay": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/message_display.py"}]}],
+    "Stop": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/stop.py"}]}],
+    "SessionEnd": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_end.py"}]}]
   }
 }
 ```
+Each hook script is directly executable (`#!/usr/bin/env python3` +
+`chmod +x`) and resolves its own package root once, at the top, before
+importing `claude_log` — the one-line equivalent of what the dropped
+`bin/` wrappers did, without a second file per hook.
 
 ## Order of implementation
 0. **Ground-truth capture**: confirm real field names for `MessageDisplay`
    and `SessionEnd` (unverified by the earlier hooks-doc fetch — only
    `Stop`/`UserPromptSubmit`/`SessionStart` common fields were confirmed
    directly) via a throwaway logging hook, one real turn, this project.
-1. `config.py`, `paths.py`, `internal_log.py` — pure/independent, unit
-   tested immediately.
+1. `config.py` — settings load, path resolution, internal logger setup;
+   pure/independent, unit tested immediately.
 2. `git_snapshot.py` — the riskiest new piece (hash-diff correctness for
    pre-existing dirty/untracked files per ADR-0004); tested thoroughly
    in isolation before anything depends on it.
 3. `buffer.py` — atomic per-turn state + orphan sweep.
-4. `session_state.py` — window-size formula, tested against the reset/
-   re-ingestion scenarios from ADR-0007.
-5. `logger.py` — JSONL append/tail-read using the window formula.
-6. `summarizer.py` — OpenAI-compatible HTTP call, tested against a local
+4. `logger.py` — JSONL append/tail-read, including the window-size
+   formula and `.state/<session_id>.json` reset/re-ingestion handling
+   (ADR-0007), tested against those scenarios directly.
+5. `summarizer.py` — OpenAI-compatible HTTP call, tested against a local
    `http.server` fixture for success, timeout, and malformed-response
    paths (all three must yield `summary_failed`, never fabricated text).
-7. `hooks/_hook_io.py`, then the five hook modules + `bin/` wrappers +
-   the `claude-log-load` skill.
-8. Assemble the plugin structure (`.claude-plugin/plugin.json`,
+6. `hooks/_hook_io.py`, then the five hook modules (each directly
+   executable, no wrapper scripts) + the `claude-log-load` skill.
+7. Assemble the plugin structure (`.claude-plugin/plugin.json`,
    `hooks/hooks.json`), test locally via `claude --plugin-dir`.
-9. Manual smoke test (see Verification) in a real Claude Code session.
-10. Update `BACKLOG.md`, `CHANGELOG.md`, `README.md`.
+8. Manual smoke test (see Verification) in a real Claude Code session.
+9. Update `BACKLOG.md`, `CHANGELOG.md`, `README.md`.
 
 ## Verification
 **Unit tests** (`pytest`, no live Claude Code needed): buffer atomicity
