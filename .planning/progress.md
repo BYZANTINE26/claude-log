@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 3 - `buffer.py`
+- **Phase:** 4 - `logger.py`
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -21,12 +21,15 @@
   internal logger, 7 unit tests passing.
 - Phase 2 (`git_snapshot.py`) done: hash-diff file-touch tracking, 9
   unit tests passing, one real bug found and fixed (see findings.md).
+- Phase 3 (`buffer.py`) done: per-turn buffer, MessageDisplay delta
+  accumulation, orphan sweep, 8 unit tests passing.
 
 ### Test Results
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
 | `tests/test_config.py` (7 tests) | all pass | all pass | ✅ |
 | `tests/test_git_snapshot.py` (9 tests) | all pass | all pass | ✅ |
+| `tests/test_buffer.py` (8 tests) | all pass | all pass | ✅ |
 
 ### Errors
 | Error | Resolution |

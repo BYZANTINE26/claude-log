@@ -6,10 +6,11 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/buffer.py` (atomic per-turn buffer + orphan sweep).
+Write `claude_log/logger.py` (JSONL append/tail-read, window formula,
+`.state/<session_id>.json` reset/re-ingestion handling).
 
 ## Current Phase
-Phase 3
+Phase 4
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -38,10 +39,14 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 3: `buffer.py`
-- [ ] `start_turn`, `append_assistant_message`, `read_and_clear`
-- [ ] `sweep_orphaned` — `turn_lost` markers, per ADR-0006
-- [ ] Unit tests, atomic round-trip + orphan sweep
-- **Status:** in_progress
+- [x] `start_turn`, `append_message_delta` (renamed from
+      `append_assistant_message` — accumulates MessageDisplay's
+      incremental `delta` by `message_id`, per ADR-0005's confirmed
+      fields), `read_and_clear` (disposable: deletes file after read)
+- [x] `sweep_orphaned` — `turn_lost` markers, per ADR-0006
+- [x] Unit tests (8), atomic round-trip + both message-accumulation
+      shapes + orphan sweep
+- **Status:** done
 
 ### Phase 4: `logger.py`
 - [ ] `initialize_or_resume`, `append_entry`, `build_entry`
@@ -49,7 +54,7 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - [ ] `mark_context_reset`, `record_reingestion`
 - [ ] Unit tests: reset/no-reset/re-ingestion scenarios, resume uses
       full window
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 5: `summarizer.py`
 - [ ] `summarize()`, `call_openai_compatible_endpoint()`
