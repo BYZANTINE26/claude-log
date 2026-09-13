@@ -6,8 +6,13 @@
   2026-09-11 during the Core Logging MVP's first planning pass; single-writer
   is an accepted assumption for now (see `docs/specs/core-logging.md`).
 
-- **[technical-debt]** No log rotation or retention policy — session logs grow
-  unbounded for the life of a project. Parked 2026-09-11.
+- **[technical-debt]** No rotation or retention policy on the per-session
+  summarized logs (`<project>/.claude-log/logs/<session_id>.jsonl`,
+  `claude_log/logger.py::append_entry`) — they grow unbounded for the life
+  of a session. Not to be confused with `~/.claude-log/internal.log`, the
+  plugin's own operational log, which already rotates
+  (`claude_log/config.py::get_logger`'s `RotatingFileHandler`). Parked
+  2026-09-11.
 
 - **[technical-debt]** `refs.commit_before`/`commit_after` become dangling
   references if the commit is later amended, rebased, or reset — the stored
