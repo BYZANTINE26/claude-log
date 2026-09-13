@@ -6,11 +6,10 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/logger.py` (JSONL append/tail-read, window formula,
-`.state/<session_id>.json` reset/re-ingestion handling).
+Write `claude_log/summarizer.py` (OpenAI-compatible HTTP call).
 
 ## Current Phase
-Phase 4
+Phase 5
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -49,18 +48,18 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 4: `logger.py`
-- [ ] `initialize_or_resume`, `append_entry`, `build_entry`
-- [ ] `get_recent_entries` with the window-size formula (ADR-0007)
-- [ ] `mark_context_reset`, `record_reingestion`
-- [ ] Unit tests: reset/no-reset/re-ingestion scenarios, resume uses
-      full window
-- **Status:** in_progress
+- [x] `initialize_or_resume`, `append_entry`, `build_entry`
+- [x] `get_recent_entries` with the window-size formula (ADR-0007)
+- [x] `mark_context_reset`, `record_reingestion`
+- [x] Unit tests (11): reset/no-reset/re-ingestion scenarios, resume
+      uses full window, growth and window-cap
+- **Status:** done
 
 ### Phase 5: `summarizer.py`
 - [ ] `summarize()`, `call_openai_compatible_endpoint()`
 - [ ] Unit tests against a local `http.server` fixture: success,
       timeout, malformed-response (all three → `summary_failed`)
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 6: Hooks + `claude-log-load` skill
 - [ ] `hooks/_hook_io.py`

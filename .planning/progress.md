@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 4 - `logger.py`
+- **Phase:** 5 - `summarizer.py`
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -23,6 +23,9 @@
   unit tests passing, one real bug found and fixed (see findings.md).
 - Phase 3 (`buffer.py`) done: per-turn buffer, MessageDisplay delta
   accumulation, orphan sweep, 8 unit tests passing.
+- Phase 4 (`logger.py`) done: JSONL log, marker-entry building, the
+  context-reset window formula (all ADR-0007 scenarios), 11 unit tests
+  passing.
 
 ### Test Results
 | Test | Expected | Actual | Status |
@@ -30,6 +33,7 @@
 | `tests/test_config.py` (7 tests) | all pass | all pass | ✅ |
 | `tests/test_git_snapshot.py` (9 tests) | all pass | all pass | ✅ |
 | `tests/test_buffer.py` (8 tests) | all pass | all pass | ✅ |
+| `tests/test_logger.py` (11 tests) | all pass | all pass | ✅ |
 
 ### Errors
 | Error | Resolution |
