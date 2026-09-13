@@ -64,6 +64,10 @@ def main() -> None:
         entry = logger.build_entry(prompt_id, timestamp, summary, refs)
 
     logger.append_entry(log_path, entry)
+    config_module.get_logger().info(
+        "Stop: logged turn %s (summary_failed=%s, %d file(s) touched)",
+        prompt_id, summary is None, len(refs["files"]),
+    )
     emit_ok(system_message)
 
 

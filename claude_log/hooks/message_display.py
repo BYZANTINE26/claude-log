@@ -25,12 +25,15 @@ def main() -> None:
     session_id = hook_input.get("session_id", "unknown-session")
     prompt_id = hook_input.get("prompt_id", "unknown-prompt")
 
+    final = hook_input.get("final", False)
     append_message_delta(
         config_module.buffer_path(project_root, session_id, prompt_id),
         hook_input.get("message_id", ""),
         hook_input.get("delta", ""),
-        hook_input.get("final", False),
+        final,
     )
+    if final:
+        config_module.get_logger().debug("MessageDisplay: finalized a message for turn %s", prompt_id)
     emit_ok()
 
 

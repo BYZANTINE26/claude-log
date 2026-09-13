@@ -50,7 +50,11 @@ def summarize(
         get_logger().error("summarize: endpoint call failed: %s", error)
         return None
 
-    return summary if summary and summary.strip() else None
+    if not summary or not summary.strip():
+        get_logger().warning("summarize: endpoint returned an empty summary")
+        return None
+    get_logger().debug("summarize: got a %d-character summary", len(summary))
+    return summary
 
 
 def call_openai_compatible_endpoint(

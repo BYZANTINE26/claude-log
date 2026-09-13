@@ -24,10 +24,14 @@ def main() -> None:
         emit_ok()
         return
 
-    if hook_input.get("source") == "clear":
+    source = hook_input.get("source")
+    if source == "clear":
         project_root = resolve_project_root(hook_input)
         session_id = hook_input.get("session_id", "unknown-session")
         logger.mark_context_reset(project_root, session_id)
+        config_module.get_logger().info("SessionStart: marked a context reset (session %s)", session_id)
+    else:
+        config_module.get_logger().debug("SessionStart: source=%s, no reset needed", source)
 
     emit_ok()
 

@@ -33,6 +33,11 @@ def main() -> None:
         log_path = logger.initialize_or_resume(project_root, session_id)
         for marker in lost_markers:
             logger.append_entry(log_path, marker)
+        config_module.get_logger().info(
+            "SessionEnd: swept %d orphaned turn(s) for session %s", len(lost_markers), session_id
+        )
+    else:
+        config_module.get_logger().debug("SessionEnd: no orphaned buffers for session %s", session_id)
 
     emit_ok()  # SessionEnd discards systemMessage per the hooks reference
 
