@@ -148,3 +148,18 @@ plugin anyone can install through Claude Code, not just load locally via
   clean up `~/.claude-log/`; the README should say so explicitly so a
   user doesn't wonder why config/log files persist after uninstall.
   Parked 2026-09-13.
+
+- **[enhancement] #19** `README.md` is written for a project-local reader
+  (someone already in the repo, running tests, checking `BACKLOG.md`) and
+  needs a pass aimed at a stranger installing claude-log as a plugin for
+  the first time — the audience `#13`'s marketplace distribution actually
+  brings in. Needs: a real marketplace-install quickstart (`/plugin
+  marketplace add ...` + `/plugin install ...`) once `#13` lands, not just
+  `--plugin-dir`; a plain-language "what does this actually do to my
+  machine" section (what gets written where, that it runs on every
+  project once installed); troubleshooting for the most likely first-run
+  failures (`#15`'s cross-platform hook issue, no summarization endpoint
+  configured); and a badges/license/repository-link pass once `#14`
+  lands. Parked 2026-09-13, blocked on nothing but best sequenced after
+  `#13`-`#15` so it documents the real install path rather than a
+  provisional one.
