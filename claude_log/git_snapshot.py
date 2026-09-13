@@ -12,6 +12,8 @@ a pre-existing dirty file the turn never touched be correctly excluded.
 import os
 import subprocess
 
+# Used for a path that's dirty but not a plain file `git hash-object`
+# can hash: deleted, or a directory (e.g. a nested repo/submodule).
 _DELETED_SENTINEL = "<deleted>"
 
 
@@ -54,7 +56,15 @@ def files_touched(before: dict, after: dict, project_root: str) -> list[str]:
 
 
 def _dirty_paths(project_root: str) -> list[str]:
-    output = _run(["git", "status", "--porcelain"], project_root)
+    # --untracked-files=all: without it, git folds an entirely-untracked
+    # directory into one "?? somedir/" line instead of listing its files
+    # individually. A directory path surviving into _hash_paths makes the
+    # single batched `git hash-object` call fail outright (it can't hash
+    # a directory), which used to empty the whole hash map for every
+    # path in that batch, not just the directory one — found live via a
+    # real test run once `.claude-log/.state/` existed as an untracked
+    # directory in a test project.
+    output = _run(["git", "status", "--porcelain", "--untracked-files=all"], project_root)
     if not output:
         return []
     paths = []
@@ -67,9 +77,19 @@ def _dirty_paths(project_root: str) -> list[str]:
 
 
 def _hash_paths(paths: list[str], project_root: str) -> dict:
+    """`git hash-object` can't hash a directory — one such path in a
+    batched call fails the whole call, silently zeroing every other
+    path's hash too (`_run` swallows the non-zero exit as ""). Skipping
+    directories here is a second guard on top of `--untracked-files=all`
+    in `_dirty_paths`, for cases that still surface one anyway (e.g. a
+    nested git repo/submodule, which git status never expands)."""
     if not paths:
         return {}
-    existing = [path for path in paths if os.path.exists(os.path.join(project_root, path))]
+    existing = [
+        path
+        for path in paths
+        if os.path.isfile(os.path.join(project_root, path))
+    ]
     hashes = {path: _DELETED_SENTINEL for path in paths if path not in existing}
     if existing:
         output = _run(["git", "hash-object", *existing], project_root)

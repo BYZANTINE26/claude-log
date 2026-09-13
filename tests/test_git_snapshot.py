@@ -94,3 +94,21 @@ def test_deleted_file_is_included(git_repo):
     (git_repo / "a.txt").unlink()
     after = snapshot_git_state(str(git_repo))
     assert files_touched(before, after, str(git_repo)) == ["a.txt"]
+
+
+def test_untracked_directory_does_not_blank_out_other_files(git_repo):
+    """Regression test for a real bug found live: an entirely-untracked
+    directory used to fold into one `git status --porcelain` line that
+    `git hash-object` can't hash, silently emptying the *whole* dirty
+    hash map (every other genuinely touched file included) rather than
+    just that one directory's entry."""
+    before = snapshot_git_state(str(git_repo))
+    (git_repo / "regular.txt").write_text("a plain new file")
+    nested_dir = git_repo / "somedir"
+    nested_dir.mkdir()
+    (nested_dir / "inner.txt").write_text("inside an untracked directory")
+    after = snapshot_git_state(str(git_repo))
+    assert files_touched(before, after, str(git_repo)) == [
+        "regular.txt",
+        "somedir/inner.txt",
+    ]
