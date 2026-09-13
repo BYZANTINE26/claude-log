@@ -20,18 +20,19 @@ so overlapping or interrupted turns can never collide.
 On every `UserPromptSubmit`, before creating the new turn's buffer, the
 hook lists the buffer directory for files prefixed `<session_id>__`: any
 one other than the file about to be created is a leftover from a turn
-that never reached
-`Stop` (crash, interrupt, or an as-yet-unconfirmed queueing edge case —
-see the `research` ticket in `BACKLOG.md`). Each leftover is logged as a
-`"turn_lost": true` marker entry (per ADR-0003) and deleted, rather than
-guessed at or silently merged into the new turn.
+that never reached `Stop` — confirmed, directly from the hooks
+reference's own Stop section, that **`Stop` does not fire on a Ctrl+C
+interrupt at all** (only crash and an as-yet-unconfirmed queueing edge
+case remain open, see the `research` ticket in `BACKLOG.md`). Each
+leftover is logged as a `"turn_lost": true` marker entry (per ADR-0003)
+and deleted, rather than guessed at or silently merged into the new turn.
 
 ## Considered Options
 - Keep `session_id`-only keying and rely on Claude Code never actually
-  overlapping turns — rejected: the exact interrupt/queueing behavior is
-  undocumented (confirmed via the hooks reference), so building on an
-  unverified assumption risks silently corrupting two turns' data instead
-  of failing safely.
+  overlapping turns — rejected: `Stop` provably doesn't fire on every
+  turn-ending path (confirmed: not on interrupt), so a buffer scheme that
+  assumes one-turn-at-a-time would corrupt data on every interrupted turn,
+  not just a hypothetical edge case.
 
 ## Consequences
 Orphan detection now runs on every `UserPromptSubmit`, not just

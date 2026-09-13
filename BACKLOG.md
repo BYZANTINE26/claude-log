@@ -46,11 +46,13 @@
 - **[good-to-have]** Compression/encryption for archived log files. Parked
   2026-09-11.
 
-- **[research]** Confirm empirically whether `Stop` fires on a Ctrl+C
-  interrupt mid-generation, and how a prompt queued before the prior turn's
-  `Stop` fires sequences against that turn's `prompt_id` — undocumented in
-  Claude Code's hooks reference as of 2026-09-13. Current design
-  (`docs/adr/0006-prompt-id-keyed-turn-buffers.md`) is safe either way —
-  orphaned buffers always surface as `turn_lost` markers — but the actual
-  behavior is unverified live. Parked 2026-09-13, verify during the Core
-  Logging manual smoke test (`.claude/plans/PLAN.md`).
+- **[research]** How a prompt queued before the prior turn's `Stop` fires
+  sequences against that turn's `prompt_id` is still undocumented (whether
+  `UserPromptSubmit` for the queued prompt can fire before the earlier
+  turn's `Stop`). Confirmed separately, directly from the hooks reference's
+  own Stop section: `Stop` does **not** fire on a Ctrl+C interrupt at all
+  (API errors go to `StopFailure` instead), so the interrupt case is no
+  longer a research item — `docs/adr/0006-prompt-id-keyed-turn-buffers.md`'s
+  `turn_lost` orphan sweep is confirmed necessary, not hypothetical.
+  Parked 2026-09-13, verify the remaining queueing question during the
+  Core Logging manual smoke test (`.claude/plans/PLAN.md`).

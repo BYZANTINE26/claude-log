@@ -122,17 +122,27 @@ project's `.claude/settings.json`.
 Confirmed input fields, from the hooks reference's per-event sections
 (not just its summary table — see PLAN.md's note on the one remaining
 ambiguity):
-- **`UserPromptSubmit`**: `session_id, cwd, prompt_id, user_prompt, ...`
-- **`MessageDisplay`**: `session_id, cwd, turn_id, message_id, index,
-  final, delta` — fires once per batch of newly-completed lines
-  (interactive) or once with the full message (`index: 0, final: true`)
-  in non-interactive/SDK runs. `delta` is incremental text, not the full
-  message, in the interactive case — the buffer must accumulate `delta`
-  across calls for the same `message_id`, using `final` to know when a
-  message is complete.
-- **`Stop`**: `session_id, cwd, prompt_id, last_assistant_message, ...`
-- **`SessionStart`**: `session_id, cwd, ...`, matcher supports
-  `startup|resume|clear|compact|fork` (see ADR-0007)
+- **`UserPromptSubmit`**: `session_id, cwd, prompt_id, prompt, ...`
+  (corrected: an earlier summary-table pass wrongly said `user_prompt`)
+- **`MessageDisplay`**: `session_id, cwd, prompt_id, turn_id, message_id,
+  index, final, delta` — `prompt_id` is a universal common field (present
+  on every event once the first prompt has been submitted), so it's
+  expected alongside `MessageDisplay`'s own `turn_id`/`message_id`, even
+  though the doc's own example payload happens not to show it. Fires once
+  per batch of newly-completed lines (interactive) or once with the full
+  message (`index: 0, final: true`) in non-interactive/SDK runs. `delta`
+  is incremental text, not the full message, in the interactive case —
+  the buffer must accumulate `delta` across calls for the same
+  `message_id`, using `final` to know when a message is complete.
+- **`Stop`**: `session_id, cwd, prompt_id, last_assistant_message, ...`.
+  **Does not fire on a Ctrl+C interrupt** (confirmed directly from the
+  hooks reference's own Stop section) — this is exactly why the
+  `turn_lost` orphan-sweep mechanism (docs/adr/0006) exists, not a
+  hypothetical edge case
+- **`SessionStart`**: `session_id, cwd, source, ...` — `source` is
+  `startup|resume|clear|compact|fork`, present directly in the input
+  (not only inferred from which matcher fired), confirmed from the
+  hooks reference's own SessionStart section (see ADR-0007)
 - **`SessionEnd`**: `session_id, cwd, reason` — `reason` is one of
   `clear|resume|logout|prompt_input_exit|other`; fires on `/clear` and
   `/resume` too, not only true session termination.
