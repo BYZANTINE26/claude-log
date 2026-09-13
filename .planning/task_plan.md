@@ -6,11 +6,12 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Assemble the plugin structure (`.claude-plugin/plugin.json`,
-`hooks/hooks.json`), test locally via `claude --plugin-dir`.
+Manual smoke test: resume, `/clear`, `/claude-log-load`, interrupt
+scenarios in a real interactive session (basic turn logging already
+verified for real in Phase 7 via headless mode).
 
 ## Current Phase
-Phase 7
+Phase 8
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -75,14 +76,17 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 7: Plugin assembly
-- [ ] `.claude-plugin/plugin.json`, `hooks/hooks.json`
-- [ ] Local test via `claude --plugin-dir`
-- **Status:** in_progress
+- [x] `.claude-plugin/plugin.json`, `hooks/hooks.json`
+- [x] Validated with `claude plugin validate .` (clean) and a real
+      headless run (`claude --plugin-dir . -p "..."`) — produced a real,
+      correct log entry end-to-end (see findings.md)
+- **Status:** done
 
 ### Phase 8: Manual smoke test
-- [ ] Fresh session, resume, `/clear`, `/claude-log-load`, interrupt —
-      see `.claude/plans/PLAN.md`'s Verification section
-- **Status:** pending
+- [x] Basic turn logging — verified for real in Phase 7 (headless mode)
+- [ ] Fresh interactive session, resume, `/clear`, `/claude-log-load`,
+      interrupt — see `.claude/plans/PLAN.md`'s Verification section
+- **Status:** in_progress
 
 ### Phase 9: Docs
 - [ ] Update `BACKLOG.md`, `CHANGELOG.md`, `README.md`

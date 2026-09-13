@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 7 - Plugin assembly
+- **Phase:** 8 - Manual smoke test (interactive scenarios remaining)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -35,6 +35,13 @@
 - Phase 6 done: all five hooks, `_hook_io.py`, and the
   `/claude-log-load` skill (`claude_log/cli.py`) implemented; 22
   integration tests passing.
+- Phase 7 done: `.claude-plugin/plugin.json` + `hooks/hooks.json`
+  assembled, `claude plugin validate .` passes clean, and a real headless
+  run (`claude --plugin-dir . -p "..."`) produced a correct end-to-end
+  log entry (real prompt_id as turn_id, correct commit snapshots, empty
+  files list, summary_failed marker since no endpoint is configured yet,
+  buffer cleaned up afterward). This is real evidence, not a guess —
+  self-hosting caught the same class of real bugs it caught last time.
 
 ### Test Results
 | Test | Expected | Actual | Status |
