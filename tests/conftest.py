@@ -1,6 +1,7 @@
 """Shared fixtures: an isolated ~/.claude-log and project directory so
 tests never touch the real machine-level config or a real project."""
 
+import io
 import json
 import logging
 
@@ -38,3 +39,13 @@ def write_config(plugin_home, overrides: dict) -> None:
     plugin_home.mkdir(parents=True, exist_ok=True)
     with open(plugin_home / "config.json", "w", encoding="utf-8") as config_file:
         json.dump(overrides, config_file)
+
+
+def run_hook(monkeypatch, run_function, hook_input: dict) -> None:
+    """Feed `hook_input` as the hook's stdin JSON and run its guarded
+    `run()`, asserting it always exits 0 (a claude-log bug must never
+    block the user's session)."""
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook_input)))
+    with pytest.raises(SystemExit) as exit_info:
+        run_function()
+    assert exit_info.value.code in (0, None)
