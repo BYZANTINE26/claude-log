@@ -6,10 +6,11 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/summarizer.py` (OpenAI-compatible HTTP call).
+Write `claude_log/hooks/_hook_io.py`, then the five hook modules and the
+`claude-log-load` skill.
 
 ## Current Phase
-Phase 5
+Phase 6
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -56,10 +57,12 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 5: `summarizer.py`
-- [ ] `summarize()`, `call_openai_compatible_endpoint()`
-- [ ] Unit tests against a local `http.server` fixture: success,
-      timeout, malformed-response (all three → `summary_failed`)
-- **Status:** in_progress
+- [x] `summarize()`, `call_openai_compatible_endpoint()` — no
+      rule-based fallback this time; any failure returns None
+- [x] Unit tests (7) against a local `http.server` fixture: success, no
+      endpoint configured, timeout, malformed-response, HTTP error
+      (all failure cases confirm `summary_failed`'s precondition)
+- **Status:** done
 
 ### Phase 6: Hooks + `claude-log-load` skill
 - [ ] `hooks/_hook_io.py`
@@ -68,7 +71,7 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - [ ] `skills/claude-log-load/SKILL.md`
 - [ ] Hook sequence integration tests via canned fixtures, including an
       interrupted-turn scenario
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 7: Plugin assembly
 - [ ] `.claude-plugin/plugin.json`, `hooks/hooks.json`
