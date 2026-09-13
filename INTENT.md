@@ -29,9 +29,13 @@ cheaply without redundancy.
 
 ## Constraints
 - **Project-scoped logs** (one log per project, one per session, resumable)
-- **Configurable verbosity** (slim vs. rich log entries)
-- **Local summarization** (no external API calls to preserve token efficiency)
+- **Single entry shape** — a summary plus metadata; no bloated "rich" mode
+  that re-embeds raw content (see `docs/adr/0004-*`)
+- **Local-network summarization** via an OpenAI-compatible chat-completions
+  endpoint (no cloud API calls, to preserve token efficiency)
 - **Append-only** (logs are write-once, chronological)
+- **Installable anywhere** — ships as a personal Claude Code plugin, not
+  per-project hook configuration (see `docs/adr/0001-*`)
 
 ## Success Criteria
 1. **Reduced token usage** — benchmark shows <20% of claude-mem's token cost
@@ -39,9 +43,17 @@ cheaply without redundancy.
 3. **Easy resumption** — new session can read log and pick up where previous left
 4. **Benchmarked comparison** — prove superiority over existing tools in token
    usage, context fidelity, and resumability
+5. **Log integrity** — a failure or interruption is always visible as an
+   explicit marker, never a fabricated summary or a silent gap (see
+   `docs/adr/0003-*`)
 
 ## Unresolved Questions (for refinement)
-- Exact local model/endpoint for summarization (abstract for now)
+- Exact local model to run behind the OpenAI-compatible endpoint (left to
+  the user's own setup; the contract is fixed, see `curl.sh` reference)
 - Viewing/querying UI (MVP: just append-only file)
-- Integration points with Claude Code (hooks, CLI commands)
 - Log retention & cleanup policy
+- Whether `/clear` reuses `session_id` or starts a new one — undocumented;
+  design is correct either way (see `docs/adr/0007-*`)
+- Whether `Stop` fires on a Ctrl+C interrupt, and how a queued prompt
+  sequences against the prior turn — undocumented; see the `research`
+  ticket in `BACKLOG.md`
