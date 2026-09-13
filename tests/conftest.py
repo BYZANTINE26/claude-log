@@ -10,24 +10,20 @@ from claude_log import config as config_module
 
 
 @pytest.fixture(autouse=True)
-def reset_logger_cache():
-    """get_logger() caches its handler per-process, and the underlying
-    named logger is a process-wide singleton — both need resetting so
-    each test (pointed at its own tmp `HOME`) starts clean."""
-    config_module._logger = None
-    logging.getLogger("claude_log").handlers.clear()
-    yield
-    config_module._logger = None
-    logging.getLogger("claude_log").handlers.clear()
-
-
-@pytest.fixture
 def plugin_home(tmp_path, monkeypatch):
-    """Redirect `~` so `config.plugin_home()` resolves inside tmp_path."""
+    """Redirect `~` so every test's `config.plugin_home()` resolves inside
+    tmp_path, never the real machine-level ~/.claude-log — autouse since
+    get_logger() is called from modules that don't take this fixture
+    directly (e.g. summarizer.py logging a failure)."""
     home_dir = tmp_path / "home"
     home_dir.mkdir()
     monkeypatch.setenv("HOME", str(home_dir))
-    return home_dir / ".claude-log"
+
+    config_module._logger = None
+    logging.getLogger("claude_log").handlers.clear()
+    yield home_dir / ".claude-log"
+    config_module._logger = None
+    logging.getLogger("claude_log").handlers.clear()
 
 
 @pytest.fixture
