@@ -1,12 +1,12 @@
 # Backlog
 
-- **[technical-debt]** No file locking on the session log — two Claude Code
+- **[technical-debt] #1** No file locking on the session log — two Claude Code
   sessions sharing a `session_id` would corrupt `<project>/.claude-log/logs/
   <session_id>.jsonl` since writes aren't coordinated across processes. Parked
   2026-09-11 during the Core Logging MVP's first planning pass; single-writer
   is an accepted assumption for now (see `docs/specs/core-logging.md`).
 
-- **[technical-debt]** No rotation or retention policy on the per-session
+- **[technical-debt] #2** No rotation or retention policy on the per-session
   summarized logs (`<project>/.claude-log/logs/<session_id>.jsonl`,
   `claude_log/logger.py::append_entry`) — they grow unbounded for the life
   of a session. Not to be confused with `~/.claude-log/internal.log`, the
@@ -14,39 +14,39 @@
   (`claude_log/config.py::get_logger`'s `RotatingFileHandler`). Parked
   2026-09-11.
 
-- **[technical-debt]** `refs.commit_before`/`commit_after` become dangling
+- **[technical-debt] #3** `refs.commit_before`/`commit_after` become dangling
   references if the commit is later amended, rebased, or reset — the stored
   hash no longer resolves to anything in `git log`. Parked 2026-09-13 during
   the grill-with-docs redo (`docs/adr/0004-drop-rich-mode-and-tool-call-tracking.md`);
   accepted as the same class of limitation as any commit-hash-based audit
   trail.
 
-- **[enhancement]** `get_recent_entries` re-reads the whole JSONL log file
+- **[enhancement] #4** `get_recent_entries` re-reads the whole JSONL log file
   every turn to compute the tail slice — fine at MVP scale, but should switch
   to a seek-from-end read once logs grow large enough for this to matter.
   Parked 2026-09-13, `docs/specs/core-logging.md`.
 
-- **[feature]** Real local summarization model behind the OpenAI-compatible
+- **[feature] #5** Real local summarization model behind the OpenAI-compatible
   `/v1/chat/completions` contract (see `SPEC.md`'s Integration Points and the
   reference request shape in `docs/specs/core-logging.md`) — the HTTP client
   is real, only "which model to run" is deferred to the user's own setup.
   Parked 2026-09-11.
 
-- **[feature]** Benchmarking suite comparing claude-log vs. claude-mem on
+- **[feature] #6** Benchmarking suite comparing claude-log vs. claude-mem on
   token usage, context fidelity, and resumability — its own phase post-MVP,
   tracked as an `INTENT.md` success criterion, not blocking Core Logging.
   Parked 2026-09-11.
 
-- **[good-to-have]** Viewing/querying UI or CLI for browsing a session log.
+- **[good-to-have] #7** Viewing/querying UI or CLI for browsing a session log.
   Parked 2026-09-11.
 
-- **[good-to-have]** Export a session log to markdown/CSV; search/filter
+- **[good-to-have] #8** Export a session log to markdown/CSV; search/filter
   across multiple session logs in a project. Parked 2026-09-11.
 
-- **[good-to-have]** Compression/encryption for archived log files. Parked
+- **[good-to-have] #9** Compression/encryption for archived log files. Parked
   2026-09-11.
 
-- **[research]** A real end-to-end test run (subagent, `--plugin-dir` +
+- **[research] #10** A real end-to-end test run (subagent, `--plugin-dir` +
   a throwaway test project, `/Volumes/GBC/projects/test_claude_log`) hit
   one `files: []` result on a genuine edit-only turn (editing an already-
   created `hello.txt`) that could not be reproduced in 3 follow-up
@@ -60,7 +60,7 @@
   attempts) also failed to reproduce it — still unexplained, still not
   blocking, ticket stays open in case it recurs with a real trigger.
 
-- **[research]** How a prompt queued before the prior turn's `Stop` fires
+- **[research] #11** How a prompt queued before the prior turn's `Stop` fires
   sequences against that turn's `prompt_id` is still undocumented (whether
   `UserPromptSubmit` for the queued prompt can fire before the earlier
   turn's `Stop`). Confirmed separately, directly from the hooks reference's
@@ -76,7 +76,7 @@
   "prompt queued while the model is still generating" scenario the
   question is actually about. Parked 2026-09-13, still open.
 
-- **[enhancement]** `~/.claude-log/internal.log`'s `debug`/`info` levels are
+- **[enhancement] #12** `~/.claude-log/internal.log`'s `debug`/`info` levels are
   currently dead weight — `claude_log/config.py::get_logger`'s level
   filtering and rotating handler work correctly, but no code path calls
   `logger.debug(...)` or `logger.info(...)` anywhere; only `warning`
