@@ -21,11 +21,6 @@
   accepted as the same class of limitation as any commit-hash-based audit
   trail.
 
-- **[enhancement] #4** `get_recent_entries` re-reads the whole JSONL log file
-  every turn to compute the tail slice — fine at MVP scale, but should switch
-  to a seek-from-end read once logs grow large enough for this to matter.
-  Parked 2026-09-13, `docs/specs/core-logging.md`.
-
 - **[feature] #5** Real local summarization model behind the OpenAI-compatible
   `/v1/chat/completions` contract (see `SPEC.md`'s Integration Points and the
   reference request shape in `docs/specs/core-logging.md`) — the HTTP client
@@ -75,22 +70,6 @@
   concurrent headless resumes, not confirmed proof of the interactive
   "prompt queued while the model is still generating" scenario the
   question is actually about. Parked 2026-09-13, still open.
-
-- **[enhancement] #12** `~/.claude-log/internal.log`'s `debug`/`info` levels are
-  currently dead weight — `claude_log/config.py::get_logger`'s level
-  filtering and rotating handler work correctly, but no code path calls
-  `logger.debug(...)` or `logger.info(...)` anywhere; only `warning`
-  (`summarizer.py`: no endpoint configured) and `error` (each hook's
-  caught-exception handler, `summarizer.py`'s failed endpoint call) are
-  ever logged. Found 2026-09-13 while reviewing why the independent
-  post-fix re-test's `internal.log` had zero new lines despite
-  `log_level: "debug"` being set — expected, since the re-test hit no
-  failures, but it means `debug`/`info` currently show nothing even when
-  set. If pursued: log each hook's entry/key decision (buffer started,
-  git snapshot taken, summarization call made) at `debug`, successful
-  turn completion at `info`, so the level setting is actually meaningful.
-  Parked 2026-09-13, not blocking — the log's original purpose (crash/
-  failure diagnostics) is unaffected.
 
 ## Publish
 
