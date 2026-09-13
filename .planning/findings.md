@@ -38,6 +38,8 @@
 | Issue | Resolution |
 |-------|------------|
 | `init-session.sh` created `task_plan.md`/`findings.md`/`progress.md` at the repo root, not `.planning/` | Moved into `.planning/` by hand to match this project's CLAUDE.md convention |
+| A blanket `.strip()` on `git status --porcelain`'s output ate the leading space that distinguishes " D file" (unstaged delete) from other status codes, corrupting the first parsed path | Switched `_run()` to a trailing-only `.rstrip("\n")`; caught by `test_deleted_file_is_included` and the modified-pre-existing-dirty-file test both failing with a mangled path |
+| PLAN.md's `git_snapshot.py` sketch took `commit_before, commit_after, dirty_before, dirty_after` as four separate parameters | Simplified `files_touched()` to take the two whole snapshot dicts instead — same data, one parameter each, less to keep in sync at call sites |
 
 ## Resources
 - `.claude/plans/PLAN.md` — master implementation plan (this branch's

@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 2 - `git_snapshot.py`
+- **Phase:** 3 - `buffer.py`
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -19,11 +19,14 @@
 - Phase 0 (remaining field-name ambiguity) closed — see findings.md.
 - Phase 1 (`config.py`) done: settings load, path resolution, rotating
   internal logger, 7 unit tests passing.
+- Phase 2 (`git_snapshot.py`) done: hash-diff file-touch tracking, 9
+  unit tests passing, one real bug found and fixed (see findings.md).
 
 ### Test Results
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
 | `tests/test_config.py` (7 tests) | all pass | all pass | ✅ |
+| `tests/test_git_snapshot.py` (9 tests) | all pass | all pass | ✅ |
 
 ### Errors
 | Error | Resolution |

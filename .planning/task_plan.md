@@ -6,10 +6,10 @@ per `.claude/plans/PLAN.md` and `docs/adr/0001`-`0007`, on branch
 `feature/core-logging`.
 
 ## Next Step
-Write `claude_log/git_snapshot.py` (commit hash + hashed dirty-file map).
+Write `claude_log/buffer.py` (atomic per-turn buffer + orphan sweep).
 
 ## Current Phase
-Phase 2
+Phase 3
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Order of implementation.
@@ -31,16 +31,17 @@ Copied from `.claude/plans/PLAN.md`'s Order of implementation.
 - **Status:** done
 
 ### Phase 2: `git_snapshot.py`
-- [ ] `snapshot_git_state()` — commit hash + hashed dirty-file map
-- [ ] `files_touched()` — commit-diff union hash-diff, per ADR-0004
-- [ ] Unit tests, including the pre-existing-dirty-file exclusion case
-- **Status:** in_progress
+- [x] `snapshot_git_state()` — commit hash + hashed dirty-file map
+- [x] `files_touched()` — commit-diff union hash-diff, per ADR-0004
+- [x] Unit tests (9), including the pre-existing-dirty-file exclusion,
+      revert-to-no-op, and deletion cases
+- **Status:** done
 
 ### Phase 3: `buffer.py`
 - [ ] `start_turn`, `append_assistant_message`, `read_and_clear`
 - [ ] `sweep_orphaned` — `turn_lost` markers, per ADR-0006
 - [ ] Unit tests, atomic round-trip + orphan sweep
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 4: `logger.py`
 - [ ] `initialize_or_resume`, `append_entry`, `build_entry`
