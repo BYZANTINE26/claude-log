@@ -247,7 +247,7 @@ Core Logging is implemented, tested twice end-to-end, and merged to
 `dev`. This phase turns claude-log from "something you load with
 `--plugin-dir` or clone by hand" into a plugin a stranger can install
 through Claude Code's own mechanism. Scope is exactly `BACKLOG.md`'s
-`## Publish` section, tickets `#13`-`#19` — see that section for the
+`## Publish` section, tickets `#13`-`#20` — see that section for the
 full research behind each decision below; this plan doesn't repeat it,
 only sequences it.
 
@@ -272,13 +272,24 @@ only sequences it.
    `/plugin marketplace add` + `/plugin install` test, not just
    `--plugin-dir`. Needs `#14`/`#15` landed first so what it distributes
    is actually correct.
-5. **`#19` — README pass for installers.** Marketplace-install
+5. **`#20` — Claude-as-summarizer provider.** A new `"provider":
+   "claude-code"` shape for `summarization_endpoint`, alongside (never
+   replacing) the existing OpenAI-compatible path: any Claude model id
+   the user configures, `MAX_THINKING_TOKENS=0` to disable thinking,
+   `--safe-mode --tools ""` so the subprocess can't trigger claude-log's
+   own hooks or take any action. Placed after `#13`/`#16` since it's a
+   real feature addition best landed once the plugin's install/
+   correctness story is solid, and before `#19` so the README documents
+   it too. Needs a spike first, confirming `--safe-mode --tools ""`
+   genuinely isolates the subprocess, before wiring it into
+   `summarizer.py` for real.
+6. **`#19` — README pass for installers.** Marketplace-install
    quickstart, a plain-language "what does this do to my machine"
-   section, first-run troubleshooting, license/repo links. Needs `#13`
-   landed so the quickstart documents the real command, not a
-   provisional one. Folds in `#18`'s uninstall/`${CLAUDE_PLUGIN_DATA}`
-   note.
-6. **`#17` — cross-platform testing.** Real verification everywhere
+   section, first-run troubleshooting, license/repo links, and how to
+   opt into `#20`'s Claude-as-summarizer provider. Needs `#13` landed so
+   the quickstart documents the real command, not a provisional one.
+   Folds in `#18`'s uninstall/`${CLAUDE_PLUGIN_DATA}` note.
+7. **`#17` — cross-platform testing.** Real verification everywhere
    this environment allows; anything genuinely untestable here (e.g. a
    real Windows machine) gets documented as an honest, named gap rather
    than assumed fixed.
@@ -294,6 +305,10 @@ Per step, not just at the end:
 - `#13`: a real `/plugin marketplace add <this repo>` +
   `/plugin install claude-log@<marketplace>` in a throwaway test project,
   not just `--plugin-dir`.
+- `#20`: a spike script confirming a `claude -p ... --safe-mode --tools ""`
+  subprocess neither triggers claude-log's own hooks nor executes any
+  tool call, before wiring it into `summarizer.py`; then a unit/
+  integration test against that real subprocess path.
 - `#19`: read the finished README as if seeing this repo for the first
   time — does it answer "how do I install this" and "what does it do to
   my machine" without needing to open another file?

@@ -1,7 +1,7 @@
 # Task Plan: claude-log Publish
 
 ## Goal
-Close out `BACKLOG.md`'s `## Publish` section (`#13`-`#19`) on branch
+Close out `BACKLOG.md`'s `## Publish` section (`#13`-`#20`) on branch
 `feature/publish-plugin`, per `.claude/plans/PLAN.md`'s Publish phase, so
 claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
@@ -40,15 +40,25 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
       throwaway project, not just `--plugin-dir`
 - **Status:** pending
 
-### Phase 5: README pass for installers (`#19`, folds in `#18`)
+### Phase 5: Claude-as-summarizer provider (`#20`)
+- [ ] Spike: confirm `claude -p ... --safe-mode --tools ""` neither
+      triggers claude-log's own hooks nor executes a tool call
+- [ ] `"provider": "claude-code"` config shape, additive to (not
+      replacing) the OpenAI-compatible path
+- [ ] `MAX_THINKING_TOKENS=0` in the subprocess environment; surface the
+      Fable-model exception rather than silently ignoring it
+- [ ] Any Claude model id accepted, not hardcoded to Haiku
+- **Status:** pending
+
+### Phase 6: README pass for installers (`#19`, folds in `#18`)
 - [ ] Marketplace-install quickstart
 - [ ] Plain-language "what does this do to my machine" section
 - [ ] First-run troubleshooting (`#15`'s gap, no endpoint configured)
 - [ ] License/repo links; note that uninstall doesn't clean up
-      `~/.claude-log/` (`#18`)
+      `~/.claude-log/` (`#18`); document `#20`'s opt-in provider
 - **Status:** pending
 
-### Phase 6: Cross-platform testing (`#17`)
+### Phase 7: Cross-platform testing (`#17`)
 - [ ] Verify everywhere this environment allows
 - [ ] Document any genuinely untestable case (e.g. real Windows) as an
       honest, named gap rather than assumed fixed
@@ -57,8 +67,8 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 ## Decisions Made
 | Decision | Rationale |
 |----------|-----------|
-| Branch scoped to exactly `BACKLOG.md`'s Publish tickets (`#13`-`#19`) | `#5`/`#6`/`#10`/`#11`/`#20` are unrelated or still-open research, not part of "ship as a production plugin" |
-| Phase order: `#14` -> `#15` -> `#16` -> `#13` -> `#19` -> `#17` | Real dependency order — manifest/license first (nothing depends on it), hook portability before anything documents/distributes the install path, file locking as an independent correctness fix, marketplace once the install path is correct, README once the marketplace path is real, cross-platform testing last |
+| Branch scoped to exactly `BACKLOG.md`'s Publish tickets (`#13`-`#20`) | `#20` was initially mis-scoped as unrelated, but it sits physically inside `## Publish` — corrected. `#5`/`#6`/`#10`/`#11` are unrelated or still-open research, genuinely out of scope |
+| Phase order: `#14` -> `#15` -> `#16` -> `#13` -> `#20` -> `#19` -> `#17` | Real dependency order — manifest/license first (nothing depends on it), hook portability before anything documents/distributes the install path, file locking as an independent correctness fix, marketplace once the install path is correct, `#20` once the plugin's install/correctness story is solid, README once both the marketplace path and `#20` are real, cross-platform testing last |
 
 ## Errors Encountered
 | Error | Resolution |

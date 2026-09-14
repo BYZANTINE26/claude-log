@@ -1,13 +1,16 @@
 # Findings & Decisions
 
 ## Requirements
-- Scope is exactly `BACKLOG.md`'s `## Publish` section, `#13`-`#19` —
+- Scope is exactly `BACKLOG.md`'s `## Publish` section, `#13`-`#20` —
   see that section for the full research behind each ticket (already
   grounded in `plugins.md`, `plugin-marketplaces.md`,
-  `plugins-reference.md`, and `hooks.md`, fetched directly). This branch
-  implements/resolves those tickets; it doesn't re-derive the research.
-- `#10`/`#11`/`#20` (open research items, and the Claude-as-summarizer
-  feature) are explicitly out of scope for this branch.
+  `plugins-reference.md`, `hooks.md`, and `model-config.md`, fetched
+  directly). This branch implements/resolves those tickets; it doesn't
+  re-derive the research.
+- `#10`/`#11` (open research items unrelated to publishing) are
+  explicitly out of scope. `#20` was initially left off by mistake — it
+  is physically inside `## Publish`, so it's in scope (corrected
+  2026-09-13, see `task_plan.md`'s Decisions Made).
 
 ## Research Findings
 (To be filled in per-phase as real findings surface — e.g. how

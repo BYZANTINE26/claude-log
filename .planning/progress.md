@@ -16,6 +16,10 @@
   Core Logging planning docs, since each branch gets isolated planning
   files) and populated it with this branch's real phases from
   `PLAN.md`.
+- Corrected scope: `#20` is physically inside `BACKLOG.md`'s `## Publish`
+  section (it was appended after `#19` but before checking the section
+  header's actual position) — added as Phase 5, README (now Phase 6)
+  updated to also document it, cross-platform testing pushed to Phase 7.
 
 ### Test Results
 | Test | Expected | Actual | Status |
