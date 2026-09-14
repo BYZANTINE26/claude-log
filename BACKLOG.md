@@ -86,30 +86,6 @@ plugin anyone can install through Claude Code, not just load locally via
   release, but worth another look before declaring a stable 1.0. No new
   ticket number — cross-referencing the existing entries above.
 
-- **[good-to-have] #18** `${CLAUDE_PLUGIN_DATA}` (the plugin-lifecycle
-  -managed persistent directory that Claude Code deletes automatically on
-  uninstall) isn't used — claude-log deliberately stores its config and
-  internal log at `~/.claude-log/` instead (`docs/adr/0002`). That's a
-  fine design choice, but it means uninstalling the plugin will *not*
-  clean up `~/.claude-log/`; the README should say so explicitly so a
-  user doesn't wonder why config/log files persist after uninstall.
-  Parked 2026-09-13.
-
-- **[enhancement] #19** `README.md` is written for a project-local reader
-  (someone already in the repo, running tests, checking `BACKLOG.md`) and
-  needs a pass aimed at a stranger installing claude-log as a plugin for
-  the first time — the audience `#13`'s marketplace distribution actually
-  brings in. Needs: a real marketplace-install quickstart (`/plugin
-  marketplace add ...` + `/plugin install ...`) once `#13` lands, not just
-  `--plugin-dir`; a plain-language "what does this actually do to my
-  machine" section (what gets written where, that it runs on every
-  project once installed); troubleshooting for the most likely first-run
-  failures (`#15`'s cross-platform hook issue, no summarization endpoint
-  configured); and a badges/license/repository-link pass once `#14`
-  lands. Parked 2026-09-13, blocked on nothing but best sequenced after
-  `#13`-`#15` so it documents the real install path rather than a
-  provisional one.
-
 - **[good-to-have] #21** Submit claude-log to the public `claude-community`
   marketplace (via the in-app forms at claude.ai or platform.claude.com),
   so users don't need to add `BYZANTINE26/claude-log` as a custom

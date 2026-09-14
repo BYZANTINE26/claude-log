@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 6 — README pass for installers (`#19`, folds in `#18`).
+Start Phase 7 — cross-platform testing (`#17`).
 
 ## Current Phase
-Phase 6
+Phase 7
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -60,12 +60,12 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 6: README pass for installers (`#19`, folds in `#18`)
-- [ ] Marketplace-install quickstart
-- [ ] Plain-language "what does this do to my machine" section
-- [ ] First-run troubleshooting (`#15`'s gap, no endpoint configured)
-- [ ] License/repo links; note that uninstall doesn't clean up
+- [x] Marketplace-install quickstart
+- [x] Plain-language "what does this do to my machine" section
+- [x] First-run troubleshooting (`#15`'s gap, no endpoint configured)
+- [x] License/repo links; note that uninstall doesn't clean up
       `~/.claude-log/` (`#18`); document `#20`'s opt-in provider
-- **Status:** pending
+- **Status:** done
 
 ### Phase 7: Cross-platform testing (`#17`)
 - [ ] Verify everywhere this environment allows

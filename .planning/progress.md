@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 6 - README pass for installers (`#19`)
+- **Phase:** 7 - Cross-platform testing (`#17`)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -72,6 +72,16 @@
   hook pipeline with the provider genuinely configured: a real
   (non-`summary_failed`) summary, one clean hook cycle in
   `internal.log`, no recursion. Full suite 65/65. Removed `#20` from
+  `BACKLOG.md`.
+- Phase 6 done: rewrote `README.md`'s Installation/Configuration/Where
+  Things Live sections and added two new ones ("What This Does to Your
+  Machine", "First-Run Troubleshooting"). Real marketplace-install
+  quickstart replaces `--plugin-dir` as the primary path (kept as an
+  "Alternative: load without installing" option). Both
+  `summarization_endpoint` shapes documented side by side, including the
+  new `claude-code` provider. Added a License section and the `#18`
+  uninstall/`${CLAUDE_PLUGIN_DATA}` note. Full suite still 65/65, both
+  manifests still validate clean. Removed `#19` and `#18` from
   `BACKLOG.md`.
 
 ### Test Results
