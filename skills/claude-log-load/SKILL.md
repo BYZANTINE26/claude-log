@@ -17,7 +17,10 @@ If `$ARGUMENTS` is empty, omit it so the script's own default (10) applies.
 The command prints the most recent claude-log entries for this project's
 current session as a numbered list of summaries, one per line (no
 metadata — `turn_id`/timestamp/git refs stay in the log file, they're
-not re-ingested). Read them to understand what happened in this session
-before the current context window began, then continue the conversation
-with that understanding. Do not explain the mechanics of this command to
-the user unless asked; just use the recovered context.
+not re-ingested). Entries with no real summary — `summary_failed` or
+`turn_lost` markers — are skipped entirely, so the printed list may be
+shorter than the requested count. Read them to understand what happened
+in this session before the current context window began, then continue
+the conversation with that understanding. Do not explain the mechanics
+of this command to the user unless asked; just use the recovered
+context.

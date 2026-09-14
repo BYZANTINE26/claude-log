@@ -4,9 +4,12 @@
 Run from the project directory the skill invokes it in. Prints the last
 `count` entries' summaries only — never `turn_id`/`timestamp`/`refs`,
 which exist for a human auditing the log file directly, not for
-re-ingestion into the model's context window — and records `count` as
-this session's reingested_count, so the context-reset window formula in
-logger.py grows from that point forward.
+re-ingestion into the model's context window, and never a
+`summary_failed`/`turn_lost` marker's placeholder text, since there's no
+real summary to re-ingest from one. `count` itself still counts raw log
+entries (matching the window-growth formula in logger.py, which does the
+same), so fewer than `count` lines may actually print if any of the
+tail entries are markers.
 
 Finding "the current session": skills have no direct session_id the way
 hooks do, so this picks the most-recently-modified session log under
@@ -29,7 +32,12 @@ from claude_log.logger import record_reingestion
 def load_recent(project_root: str, count: int) -> list[dict]:
     """Print the last `count` entries' summaries and record the
     re-ingestion. Same numbered-list convention as
-    `summarizer._build_user_content` uses for the same data."""
+    `summarizer._build_user_content` uses for the same data.
+
+    `summary_failed`/`turn_lost` entries have no real summary text, so
+    they're skipped entirely rather than printed as a placeholder line
+    — there's nothing useful to re-ingest from a marker, and the
+    numbering only counts entries actually printed."""
     session_id = _most_recent_session_id(project_root)
     if session_id is None:
         print("claude-log: no session log found for this project.")
@@ -40,8 +48,9 @@ def load_recent(project_root: str, count: int) -> list[dict]:
         entries = [json.loads(line) for line in log_file if line.strip()]
 
     recent = entries[-count:]
-    for index, entry in enumerate(recent):
-        print(f"{index + 1}. {entry.get('summary', '[no summary]')}")
+    summarized = [entry for entry in recent if "summary" in entry]
+    for index, entry in enumerate(summarized):
+        print(f"{index + 1}. {entry['summary']}")
 
     record_reingestion(project_root, session_id, count)
     return recent

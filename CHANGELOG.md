@@ -58,6 +58,10 @@ All notable changes to claude-log are documented here, following
   prints a plain numbered list of summaries only; the audit metadata
   stays in the log file for humans reading it directly, never
   re-ingested.
+- Same command was also printing a `[no summary]` placeholder line for
+  `summary_failed`/`turn_lost` marker entries. Those are now skipped
+  entirely — nothing useful to re-ingest from a marker — and the
+  printed numbering only counts summaries actually shown.
 
 ## [0.2.0] - 2026-09-13
 
