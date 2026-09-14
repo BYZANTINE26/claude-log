@@ -8,11 +8,20 @@
   "plugins": [
     {
       "name": "claude-log",
+      "displayName": "claude-log",
       "source": {
         "source": "github",
         "repo": "BYZANTINE26/claude-log"
       },
-      "description": "Append-only, token-efficient session logging for Claude Code."
+      "description": "Append-only, token-efficient session logging for Claude Code.",
+      "version": "0.2.0",
+      "author": {
+        "name": "BYZANTINE26"
+      },
+      "homepage": "https://github.com/BYZANTINE26/claude-log",
+      "repository": "https://github.com/BYZANTINE26/claude-log",
+      "license": "MIT",
+      "keywords": ["logging", "sessions", "context", "summarization"]
     }
   ]
 }
