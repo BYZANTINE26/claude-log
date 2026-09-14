@@ -92,23 +92,6 @@ plugin anyone can install through Claude Code, not just load locally via
   first — this runs `claude plugin validate` plus automated safety
   screening. Parked 2026-09-13, not started.
 
-- **[bug] #15** Cross-platform hook invocation is unverified and likely
-  broken on Windows. `hooks/hooks.json` invokes each hook as a bare path
-  in shell form (no `args`), e.g. `${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/
-  session_start.py`, relying on the `#!/usr/bin/env python3` shebang plus
-  the executable bit (confirmed `100755` in git). This works on
-  macOS/Linux but standard python.org installs on Windows don't put a
-  `python3` executable on `PATH` (only `python.exe`/`py.exe`), so `env
-  python3` resolution can fail outright even under Git Bash. `hooks.md`
-  recommends exec form (`"command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/
-  claude_log/hooks/session_start.py"]`) for anything with a path
-  placeholder — more portable, avoids quoting bugs — but doesn't by
-  itself resolve the `python3`-vs-`python` naming gap on Windows. Needs a
-  real decision (detect the interpreter at runtime? document Python
-  3.10+ with `python3` on `PATH` as a hard prerequisite? add a `py`/
-  `python` fallback?) before this can be called production-ready for a
-  general audience. Parked 2026-09-13.
-
 - **[technical-debt] #16** File locking (`#1` above) was an accepted
   MVP-scale limitation for a personal single-user tool. For a plugin
   anyone installs, running two Claude Code sessions on the same project

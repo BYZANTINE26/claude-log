@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 2 — cross-platform hook invocation (`#15`).
+Start Phase 3 — file locking (`#16`).
 
 ## Current Phase
-Phase 2
+Phase 3
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -23,10 +23,11 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 2: Cross-platform hook invocation (`#15`)
-- [ ] Switch `hooks/hooks.json` to exec form (`command`/`args`)
-- [ ] Decide and implement the Windows `python3`-vs-`python` handling
-- [ ] Real headless run still logs a correct entry after the switch
-- **Status:** pending
+- [x] Switch `hooks/hooks.json` to exec form (`command`/`args`)
+- [x] Decided: document `python3` on `PATH` as a hard prerequisite
+      (no auto-detection — untestable on a real Windows machine here)
+- [x] Real headless run still logs a correct entry after the switch
+- **Status:** done
 
 ### Phase 3: File locking (`#16`, elevates `#1`)
 - [ ] Advisory lock around `logger.append_entry` and the `.state`
