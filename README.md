@@ -211,9 +211,3 @@ history and `BACKLOG.md` for known limitations and deferred work.
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
-
-## Contributing
-
-See `~/.claude/CLAUDE.md` for project conventions and workflow (this
-project follows the user-level conventions, not a project-local copy).
-Source: [github.com/BYZANTINE26/claude-log](https://github.com/BYZANTINE26/claude-log).
