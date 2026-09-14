@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 1 - Manifest + license (`#14`)
+- **Phase:** 2 - Cross-platform hook invocation (`#15`)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -20,6 +20,10 @@
   section (it was appended after `#19` but before checking the section
   header's actual position) — added as Phase 5, README (now Phase 6)
   updated to also document it, cross-platform testing pushed to Phase 7.
+- Phase 1 done: added `repository`/`homepage`/`license`/`keywords` to
+  `.claude-plugin/plugin.json` and a real MIT `LICENSE` file.
+  `claude plugin validate . --strict` passes clean with no
+  unrecognized-field warnings.
 
 ### Test Results
 | Test | Expected | Actual | Status |

@@ -7,20 +7,20 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 1 — manifest metadata + LICENSE (`#14`).
+Start Phase 2 — cross-platform hook invocation (`#15`).
 
 ## Current Phase
-Phase 1
+Phase 2
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 
 ### Phase 1: Manifest + license (`#14`)
-- [ ] Add `repository`, `homepage`, `license`, `keywords` to
+- [x] Add `repository`, `homepage`, `license`, `keywords` to
       `.claude-plugin/plugin.json`
-- [ ] Add a real `LICENSE` file
-- [ ] `claude plugin validate . --strict` passes clean
-- **Status:** pending
+- [x] Add a real `LICENSE` file (MIT)
+- [x] `claude plugin validate . --strict` passes clean
+- **Status:** done
 
 ### Phase 2: Cross-platform hook invocation (`#15`)
 - [ ] Switch `hooks/hooks.json` to exec form (`command`/`args`)

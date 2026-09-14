@@ -92,13 +92,6 @@ plugin anyone can install through Claude Code, not just load locally via
   first — this runs `claude plugin validate` plus automated safety
   screening. Parked 2026-09-13, not started.
 
-- **[technical-debt] #14** `plugin.json` is missing fields expected for a
-  public listing: `repository`, `homepage`, `license`, `keywords` (all
-  optional per the manifest schema, but expected for discoverability and
-  user trust). There is also no `LICENSE` file anywhere in the repo — a
-  real blocker for anyone deciding whether they're allowed to use or
-  redistribute it. Parked 2026-09-13.
-
 - **[bug] #15** Cross-platform hook invocation is unverified and likely
   broken on Windows. `hooks/hooks.json` invokes each hook as a bare path
   in shell form (no `args`), e.g. `${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/
