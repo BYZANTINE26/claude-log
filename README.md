@@ -93,8 +93,11 @@ through chronologically to answer "how did we actually get here."
 
 5. `/clear` gates how much of the log feeds back into future
    summarization calls (growing back up to the configured window as new
-   turns land); `/claude-log-load [count]` lets you manually re-ingest
-   recent entries after a clear. Resuming a session (`--resume` / picking
+   turns land); `/claude-log-load [count] [--compiled]` lets you
+   manually re-ingest recent entries after a clear — as a numbered list
+   of summaries by default, or one consolidated narrative with
+   `--compiled` (falls back to the list if that call fails or no
+   endpoint is configured). Resuming a session (`--resume` / picking
    up a prior session) is **not** gated — it gets the full configured
    window immediately.
 6. Interrupted or crashed turns (no `Stop` fires on a `Ctrl+C` interrupt)
