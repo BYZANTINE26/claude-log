@@ -7,7 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_start.py"
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_start.py"]
           }
         ]
       }
@@ -17,7 +18,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/user_prompt_submit.py"
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/user_prompt_submit.py"]
           }
         ]
       }
@@ -27,7 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/message_display.py"
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/message_display.py"]
           }
         ]
       }
@@ -37,7 +40,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/stop.py"
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/stop.py"]
           }
         ]
       }
@@ -48,7 +52,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_end.py"
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_end.py"]
           }
         ]
       }

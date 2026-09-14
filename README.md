@@ -43,6 +43,20 @@ See `SPEC.md` and `docs/specs/core-logging.md` for the full design, and
 
 ## Installation
 
+### Prerequisite
+
+Every hook is a Python script, invoked as `python3 <script path>`
+(exec form, for portability — see `hooks/hooks.json`). **`python3`
+(3.10+) must be on `PATH`.** On macOS and Linux this is almost always
+already true. On Windows, a standard python.org install only adds
+`python.exe`/`py.exe` to `PATH`, not `python3.exe` — you'll need to
+either add a `python3` alias/shim yourself, or install Python through a
+distribution that provides one (e.g. the Microsoft Store package, or
+WSL). This hasn't been tested on a real Windows machine; if hooks
+silently fail to run there, this is the first thing to check.
+
+### Load the plugin
+
 claude-log ships as a personal skills-directory plugin, not a per-project
 hook registration — load it once and it applies to every project:
 
