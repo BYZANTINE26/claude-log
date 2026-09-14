@@ -37,7 +37,13 @@ def load_recent(project_root: str, count: int) -> list[dict]:
     `summary_failed`/`turn_lost` entries have no real summary text, so
     they're skipped entirely rather than printed as a placeholder line
     — there's nothing useful to re-ingest from a marker, and the
-    numbering only counts entries actually printed."""
+    numbering only counts entries actually printed.
+
+    The printed output is self-labeling (a leading "background context,
+    no action needed" line, only when there's something to show) — the
+    skill's own instructions already tell Claude how to treat this, but
+    that framing lives upstream of the tool result, not attached to it,
+    so this is defense in depth if the two ever get separated."""
     session_id = _most_recent_session_id(project_root)
     if session_id is None:
         print("claude-log: no session log found for this project.")
@@ -49,8 +55,10 @@ def load_recent(project_root: str, count: int) -> list[dict]:
 
     recent = entries[-count:]
     summarized = [entry for entry in recent if "summary" in entry]
-    for index, entry in enumerate(summarized):
-        print(f"{index + 1}. {entry['summary']}")
+    if summarized:
+        print("claude-log: recent session summaries (background context, no action needed):")
+        for index, entry in enumerate(summarized):
+            print(f"{index + 1}. {entry['summary']}")
 
     record_reingestion(project_root, session_id, count)
     return recent

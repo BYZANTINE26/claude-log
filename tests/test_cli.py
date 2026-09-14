@@ -12,8 +12,14 @@ def test_load_recent_prints_and_records_reingestion(project_root, capsys):
 
     assert len(recent) == 3
     printed_lines = capsys.readouterr().out.strip().splitlines()
-    # summaries only, numbered — no turn_id/timestamp/refs metadata
-    assert printed_lines == ["1. summary 2", "2. summary 3", "3. summary 4"]
+    # self-labeling header, then summaries only, numbered — no
+    # turn_id/timestamp/refs metadata
+    assert printed_lines == [
+        "claude-log: recent session summaries (background context, no action needed):",
+        "1. summary 2",
+        "2. summary 3",
+        "3. summary 4",
+    ]
 
     # window formula now sees 3 reingested + new turns since reset
     another_path = initialize_or_resume(project_root, "sess1")
@@ -39,4 +45,19 @@ def test_load_recent_skips_summary_failed_and_turn_lost_markers(project_root, ca
     assert len(recent) == 4  # count still spans all 4 raw entries
     printed_lines = capsys.readouterr().out.strip().splitlines()
     # markers skipped entirely, remaining summaries renumbered from 1
-    assert printed_lines == ["1. did the first thing", "2. did the last thing"]
+    assert printed_lines == [
+        "claude-log: recent session summaries (background context, no action needed):",
+        "1. did the first thing",
+        "2. did the last thing",
+    ]
+
+
+def test_load_recent_prints_nothing_when_every_entry_is_a_marker(project_root, capsys):
+    path = initialize_or_resume(project_root, "sess1")
+    append_entry(path, build_entry("t0", "ts", None, {}, failure_flag="summary_failed"))
+    append_entry(path, {"turn_id": "t1", "timestamp": "ts", "turn_lost": True})
+
+    load_recent(project_root, 2)
+
+    # no summaries to show -> no header either, not an empty labeled block
+    assert capsys.readouterr().out == ""

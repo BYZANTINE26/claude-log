@@ -63,6 +63,14 @@ All notable changes to claude-log are documented here, following
   entirely — nothing useful to re-ingest from a marker — and the
   printed numbering only counts summaries actually shown.
 
+### Changed
+- `/claude-log-load`'s output is now self-labeling: a leading
+  `claude-log: recent session summaries (background context, no action
+  needed):` header before the numbered list (omitted when there's
+  nothing to show), so the framing travels with the data instead of
+  relying only on the skill's own instructions upstream of the tool
+  result.
+
 ## [0.2.0] - 2026-09-13
 
 ### Added
