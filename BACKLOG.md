@@ -163,3 +163,45 @@ plugin anyone can install through Claude Code, not just load locally via
   lands. Parked 2026-09-13, blocked on nothing but best sequenced after
   `#13`-`#15` so it documents the real install path rather than a
   provisional one.
+
+- **[feature] #20** Summarize turns using Claude itself (e.g. Haiku) through
+  the user's existing Claude Code login, as an alternative to configuring a
+  separate OpenAI-compatible `summarization_endpoint` (`#5`) — no separate
+  account, API key, or local model setup, just whatever subscription is
+  already authenticated for Claude Code. Researched directly against
+  `code.claude.com/docs/en/headless.md` and `cli-reference.md` (fetched
+  2026-09-13, not assumed):
+  - `claude -p "<prompt>" --model <model-id>` in its **default** (non-`--bare`)
+    mode reuses the CLI's existing OAuth/subscription login — no
+    `ANTHROPIC_API_KEY` needed. `--bare` mode explicitly does *not* work for
+    this: its own docs state bare mode never reads OAuth credentials or the
+    system keychain and requires `ANTHROPIC_API_KEY` instead.
+  - `--output-format json --json-schema <schema>` gives structured output in
+    a `structured_output` field — the same shape claude-log already builds
+    for the OpenAI-compatible endpoint's `response_format` json_schema
+    (`summarizer.py::_RESPONSE_SCHEMA`), so the request/response shape this
+    would need is already designed, just needs a second implementation of
+    `call_openai_compatible_endpoint`'s role that shells out to `claude -p`
+    instead of an HTTP POST.
+  - **Real recursion risk, not hypothetical**: if a `Stop` hook shells out to
+    `claude -p` and claude-log is loaded as a personal plugin for every
+    project (`docs/adr/0001`), that spawned session would load claude-log's
+    own hooks too, potentially re-triggering summarization recursively.
+    `--safe-mode` is the documented flag that disables hooks/plugins/MCP for
+    a session while leaving authentication, model selection, and built-in
+    tools working normally — unlike `--bare`, it does not break subscription
+    auth. The subprocess call this feature needs is therefore `claude -p
+    "..." --model <model-id> --output-format json --json-schema <schema>
+    --safe-mode`, not a bare `-p` call.
+  - **Information/cost caveat to surface to the user before implementing**:
+    each summarization call becomes a real Claude Code invocation, metered
+    against whatever the user's subscription (Pro/Max) or Console usage
+    limits are — unlike a self-hosted local model (`#5`'s local-model path),
+    this has a real, recurring usage cost per turn, and needs a config
+    option so a user can opt into it deliberately (e.g. a
+    `summarization_endpoint` value like `{"provider": "claude-code", "model":
+    "claude-haiku-4-5-20251001"}` alongside the existing OpenAI-compatible
+    shape) rather than it becoming the silent default.
+  Parked 2026-09-13, not started — needs a design decision on the config
+  shape and a spike confirming `--safe-mode` genuinely prevents recursive
+  hook triggering before real implementation.
