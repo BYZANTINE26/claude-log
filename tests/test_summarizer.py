@@ -1,4 +1,5 @@
 import json
+import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -114,6 +115,94 @@ def test_summarize_http_error_returns_none(endpoint_url):
         "summarization_endpoint": {
             "url": endpoint_url(Handler),
             "model": "test-model",
+        }
+    }
+    assert summarizer.summarize([], "prompt", [], config) is None
+
+
+def _claude_code_cli_response(summary_text: str) -> str:
+    """Shape confirmed live against a real `claude -p ... --output-format
+    json --json-schema ...` call (see .planning/findings.md's spike)."""
+    return json.dumps({
+        "is_error": False,
+        "result": json.dumps({"summary": summary_text}),
+        "structured_output": {"summary": summary_text},
+        "usage": {"output_tokens_details": {"thinking_tokens": 0}},
+    })
+
+
+def test_summarize_claude_code_provider_success(monkeypatch):
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(
+            command, 0, stdout=_claude_code_cli_response("Added a helper function."), stderr=""
+        )
+
+    monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
+    config = {
+        "summarization_endpoint": {"provider": "claude-code", "model": "claude-haiku-4-5-20251001"}
+    }
+    assert summarizer.summarize([], "add a helper", ["Added it."], config) == "Added a helper function."
+
+
+def test_claude_code_provider_command_disables_hooks_tools_and_thinking(monkeypatch):
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["env"] = kwargs["env"]
+        return subprocess.CompletedProcess(command, 0, stdout=_claude_code_cli_response("ok"), stderr="")
+
+    monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
+    endpoint_config = {"provider": "claude-code", "model": "claude-haiku-4-5-20251001"}
+    summarizer.call_claude_code_provider(endpoint_config, [], "prompt", [])
+
+    command = captured["command"]
+    assert "--safe-mode" in command
+    assert command[command.index("--tools") + 1] == ""  # disables built-in tools too
+    assert captured["env"]["MAX_THINKING_TOKENS"] == "0"
+
+
+def test_claude_code_provider_warns_when_model_is_fable(monkeypatch):
+    """`internal.log`'s logger has `propagate = False` (by design, see
+    config.py), so it's checked directly rather than via caplog."""
+    warnings = []
+
+    class FakeLogger:
+        def warning(self, message, *args):
+            warnings.append(message % args)
+
+        def debug(self, *args, **kwargs):
+            pass
+
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, stdout=_claude_code_cli_response("ok"), stderr="")
+
+    monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
+    monkeypatch.setattr(summarizer, "get_logger", lambda: FakeLogger())
+    endpoint_config = {"provider": "claude-code", "model": "claude-fable-5-1"}
+    summarizer.call_claude_code_provider(endpoint_config, [], "prompt", [])
+    assert any("Fable" in warning for warning in warnings)
+
+
+def test_summarize_claude_code_provider_subprocess_error_returns_none(monkeypatch):
+    def fake_run(command, **kwargs):
+        raise subprocess.CalledProcessError(1, command, stderr="boom")
+
+    monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
+    config = {
+        "summarization_endpoint": {"provider": "claude-code", "model": "claude-haiku-4-5-20251001"}
+    }
+    assert summarizer.summarize([], "prompt", [], config) is None
+
+
+def test_summarize_claude_code_provider_timeout_returns_none(monkeypatch):
+    def fake_run(command, **kwargs):
+        raise subprocess.TimeoutExpired(command, kwargs.get("timeout"))
+
+    monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
+    config = {
+        "summarization_endpoint": {
+            "provider": "claude-code", "model": "claude-haiku-4-5-20251001", "timeout_seconds": 1
         }
     }
     assert summarizer.summarize([], "prompt", [], config) is None

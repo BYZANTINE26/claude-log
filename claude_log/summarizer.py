@@ -1,4 +1,6 @@
-"""Turn summarization via an OpenAI-compatible chat-completions endpoint.
+"""Turn summarization, either via an OpenAI-compatible chat-completions
+endpoint or, as an alternative, through the user's own Claude Code login
+(`"provider": "claude-code"` in `summarization_endpoint`, BACKLOG.md #20).
 
 No rule-based fallback: per docs/adr/0003, a failure (endpoint
 unreachable, timeout, malformed response) must never produce a
@@ -7,6 +9,8 @@ hook) writes a `summary_failed` marker entry instead.
 """
 
 import json
+import os
+import subprocess
 import urllib.request
 
 from claude_log.config import get_logger
@@ -38,14 +42,20 @@ def summarize(
 ) -> str | None:
     """A 1-2 line summary, or None if summarization failed for any reason."""
     endpoint_config = config.get("summarization_endpoint")
-    if not endpoint_config or not endpoint_config.get("url"):
+    is_claude_code = bool(endpoint_config) and endpoint_config.get("provider") == "claude-code"
+    if not endpoint_config or not (is_claude_code or endpoint_config.get("url")):
         get_logger().warning("summarize: no summarization_endpoint configured")
         return None
 
     try:
-        summary = call_openai_compatible_endpoint(
-            endpoint_config, recent_entries, prompt, assistant_messages
-        )
+        if is_claude_code:
+            summary = call_claude_code_provider(
+                endpoint_config, recent_entries, prompt, assistant_messages
+            )
+        else:
+            summary = call_openai_compatible_endpoint(
+                endpoint_config, recent_entries, prompt, assistant_messages
+            )
     except Exception as error:  # noqa: BLE001 - any failure -> summary_failed, never fabricated
         get_logger().error("summarize: endpoint call failed: %s", error)
         return None
@@ -88,6 +98,54 @@ def call_openai_compatible_endpoint(
 
     content = response_body["choices"][0]["message"]["content"]
     return json.loads(content)["summary"]
+
+
+def call_claude_code_provider(
+    endpoint_config: dict, recent_entries: list[dict], prompt: str, assistant_messages: list[str]
+) -> str:
+    """Summarize via a `claude -p` subprocess, authenticated through
+    whatever login the running Claude Code CLI already has — no separate
+    API key (BACKLOG.md #20). Raises on any subprocess, timeout, or
+    unexpected-output error, same contract as the HTTP path.
+
+    `--safe-mode` disables hooks/plugins/MCP for this subprocess, so it
+    can't re-trigger claude-log's own hooks — confirmed live, not just
+    assumed (see `.planning/findings.md`). `--tools ""` also disables
+    built-in tools: this call must only generate text, never act.
+    `MAX_THINKING_TOKENS=0` disables extended thinking (has no effect on
+    Fable models, which can't disable thinking at all — surfaced as a
+    warning rather than silently ignored).
+    """
+    model = endpoint_config["model"]
+    if "fable" in model.lower():
+        get_logger().warning(
+            "summarize: MAX_THINKING_TOKENS=0 has no effect on Fable models (%s)", model
+        )
+
+    full_prompt = f"{_SYSTEM_PROMPT}\n\n{_build_user_content(recent_entries, prompt, assistant_messages)}"
+    schema = json.dumps(_RESPONSE_SCHEMA["json_schema"]["schema"])
+
+    environment = dict(os.environ)
+    environment["MAX_THINKING_TOKENS"] = "0"
+
+    result = subprocess.run(
+        [
+            "claude",
+            "-p", full_prompt,
+            "--model", model,
+            "--output-format", "json",
+            "--json-schema", schema,
+            "--safe-mode",
+            "--tools", "",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=endpoint_config.get("timeout_seconds", 60),
+        env=environment,
+        check=True,
+    )
+    response = json.loads(result.stdout)
+    return response["structured_output"]["summary"]
 
 
 def _build_user_content(recent_entries: list[dict], prompt: str, assistant_messages: list[str]) -> str:
