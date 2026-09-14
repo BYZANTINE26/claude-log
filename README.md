@@ -15,6 +15,7 @@ summary per turn, not your whole conversation history replayed back at you.
 
 [Why](#-why-this-exists) •
 [How it works](#-how-it-works) •
+[Commands](#%EF%B8%8F-commands) •
 [Architecture](#%EF%B8%8F-architecture) •
 [Install](#-installation) •
 [Configure](#%EF%B8%8F-configuration) •
@@ -112,6 +113,25 @@ cheaply from a handful of recent entries, without redundancy.
 [`docs/specs/core-logging.md`](docs/specs/core-logging.md) for the full
 design, and [`docs/adr/`](docs/adr/) for the reasoning behind each of
 these decisions.
+
+## ⌨️ Commands
+
+```
+/claude-log-load              # last 10 summaries, numbered list
+/claude-log-load 20           # last 20 summaries, numbered list
+/claude-log-load --compiled   # last 10, consolidated into one narrative
+/claude-log-load 20 --compiled
+```
+
+`count` and `--compiled` can appear in either order, or alone; `count`
+defaults to `10`. `--compiled` sends the recent summaries to your
+configured `summarization_endpoint` to consolidate them into one
+narrative instead of a line-by-line list — if no endpoint is configured
+or that call fails, it silently falls back to the normal list.
+
+> [!TIP]
+> Only useful right after a `/clear` — a resumed session already gets
+> its full recent-log window automatically (see step 5 above).
 
 ## 🗺️ Architecture
 

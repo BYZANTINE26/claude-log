@@ -5,6 +5,20 @@ disable-model-invocation: true
 
 # claude-log-load
 
+## Arguments
+
+`/claude-log-load [count] [--compiled]` — both optional, either order:
+
+| Argument | Default | Meaning |
+|---|---|---|
+| `count` | `10` | How many recent log entries to look at. |
+| `--compiled` | off | Consolidate the summaries into one narrative instead of printing them as a numbered list (falls back to the list if the endpoint call fails or none is configured). |
+
+Examples: `/claude-log-load`, `/claude-log-load 20`,
+`/claude-log-load --compiled`, `/claude-log-load 20 --compiled`.
+
+## Behavior
+
 Run this exact command from the project root, passing through exactly
 what the user typed after the skill name (a count, `--compiled`, both in
 either order, or nothing):
