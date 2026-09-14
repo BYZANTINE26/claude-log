@@ -237,3 +237,67 @@ fixtures including an interrupted-turn scenario.
 ## Backlog items
 See `BACKLOG.md` — kept as the single source of truth, not duplicated
 here.
+
+---
+
+# Plan: Publish (feature/publish-plugin)
+
+## Context
+Core Logging is implemented, tested twice end-to-end, and merged to
+`dev`. This phase turns claude-log from "something you load with
+`--plugin-dir` or clone by hand" into a plugin a stranger can install
+through Claude Code's own mechanism. Scope is exactly `BACKLOG.md`'s
+`## Publish` section, tickets `#13`-`#19` — see that section for the
+full research behind each decision below; this plan doesn't repeat it,
+only sequences it.
+
+## Order of implementation
+1. **`#14` — manifest + license.** Add `repository`, `homepage`,
+   `license`, `keywords` to `.claude-plugin/plugin.json`; add a real
+   `LICENSE` file. Foundational — a marketplace entry and a stranger's
+   first look at the repo both need this, and nothing else here depends
+   on it, so it goes first as the cheapest real progress.
+2. **`#15` — cross-platform hook invocation.** Switch `hooks/hooks.json`
+   to exec form (`"command"`/`"args"`) instead of a bare shell-form path,
+   and decide how to handle the Windows `python3`-vs-`python` gap
+   (documented as a hard prerequisite, or a fallback). Goes before `#13`/
+   `#19` since both would otherwise document/ship a broken install path.
+3. **`#16` — file locking.** An advisory lock (`fcntl` on POSIX,
+   `msvcrt` on Windows) around `logger.append_entry` and the `.state`
+   read-modify-write, so two concurrent sessions on one project can't
+   corrupt the shared log. Independent of `#13`-`#15`, but a real
+   correctness gap that should land before calling this "production."
+4. **`#13` — marketplace distribution.** `.claude-plugin/marketplace.json`
+   listing claude-log with a `github` source; a real
+   `/plugin marketplace add` + `/plugin install` test, not just
+   `--plugin-dir`. Needs `#14`/`#15` landed first so what it distributes
+   is actually correct.
+5. **`#19` — README pass for installers.** Marketplace-install
+   quickstart, a plain-language "what does this do to my machine"
+   section, first-run troubleshooting, license/repo links. Needs `#13`
+   landed so the quickstart documents the real command, not a
+   provisional one. Folds in `#18`'s uninstall/`${CLAUDE_PLUGIN_DATA}`
+   note.
+6. **`#17` — cross-platform testing.** Real verification everywhere
+   this environment allows; anything genuinely untestable here (e.g. a
+   real Windows machine) gets documented as an honest, named gap rather
+   than assumed fixed.
+
+## Verification
+Per step, not just at the end:
+- `#14`: `claude plugin validate . --strict` passes clean with the new
+  fields recognized (not "unrecognized field" warnings).
+- `#15`: a real headless run still logs a correct entry after switching
+  to exec form; Windows behavior documented even if not testable here.
+- `#16`: a test that starts two writers concurrently and confirms the
+  log ends up with both entries, neither corrupted nor lost.
+- `#13`: a real `/plugin marketplace add <this repo>` +
+  `/plugin install claude-log@<marketplace>` in a throwaway test project,
+  not just `--plugin-dir`.
+- `#19`: read the finished README as if seeing this repo for the first
+  time — does it answer "how do I install this" and "what does it do to
+  my machine" without needing to open another file?
+
+## Backlog items
+See `BACKLOG.md`'s `## Publish` section — kept as the single source of
+truth for scope and rationale, not duplicated here.
