@@ -7,12 +7,49 @@ for why the window formula derived from that state needs no separate
 "current window size" counter.
 """
 
+import contextlib
 import json
 import os
+
+try:
+    import fcntl  # POSIX
+except ImportError:
+    fcntl = None
+
+try:
+    import msvcrt  # Windows
+except ImportError:
+    msvcrt = None
 
 from claude_log.config import log_file_path, project_log_dir, state_path
 
 _EMPTY_STATE = {"reset_at_entry_index": None, "reingested_count": None}
+
+
+@contextlib.contextmanager
+def _locked(path: str):
+    """Advisory OS-level exclusive lock on `<path>.lock`, serializing
+    concurrent writers to `path` — two Claude Code sessions sharing a
+    `session_id` can no longer interleave writes or race a
+    read-modify-write and corrupt or lose an update (BACKLOG.md #16).
+
+    ponytail: one lock per target file, held for the whole write — not
+    fine-grained, but writes here are tiny and infrequent (once per
+    turn), so contention is a non-issue at this scale.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(f"{path}.lock", "a+") as lock_file:
+        if fcntl is not None:
+            fcntl.flock(lock_file, fcntl.LOCK_EX)
+        elif msvcrt is not None:
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+        try:
+            yield
+        finally:
+            if fcntl is not None:
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+            elif msvcrt is not None:
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 def initialize_or_resume(project_root: str, session_id: str) -> str:
@@ -28,9 +65,9 @@ def initialize_or_resume(project_root: str, session_id: str) -> str:
 
 
 def append_entry(log_path: str, entry: dict) -> None:
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    with open(log_path, "a", encoding="utf-8") as log_file:
-        log_file.write(json.dumps(entry) + "\n")
+    with _locked(log_path):
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps(entry) + "\n")
 
 
 def build_entry(
@@ -77,17 +114,21 @@ def get_recent_entries(project_root: str, session_id: str, configured_window: in
 
 def mark_context_reset(project_root: str, session_id: str) -> None:
     """Called from SessionStart on `source: "clear"` (docs/adr/0007)."""
-    current_count = _count_entries(project_root, session_id)
-    _write_state(
-        project_root, session_id, {"reset_at_entry_index": current_count, "reingested_count": None}
-    )
+    with _locked(state_path(project_root, session_id)):
+        current_count = _count_entries(project_root, session_id)
+        _write_state(
+            project_root,
+            session_id,
+            {"reset_at_entry_index": current_count, "reingested_count": None},
+        )
 
 
 def record_reingestion(project_root: str, session_id: str, count: int) -> None:
     """Called from the `/claude-log-load [count]` skill."""
-    state = _read_state(project_root, session_id)
-    state["reingested_count"] = count
-    _write_state(project_root, session_id, state)
+    with _locked(state_path(project_root, session_id)):
+        state = _read_state(project_root, session_id)
+        state["reingested_count"] = count
+        _write_state(project_root, session_id, state)
 
 
 def _count_entries(project_root: str, session_id: str) -> int:
