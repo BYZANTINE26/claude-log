@@ -1,0 +1,18 @@
+{
+  "name": "claude-log",
+  "owner": {
+    "name": "BYZANTINE26",
+    "url": "https://github.com/BYZANTINE26"
+  },
+  "description": "Marketplace for claude-log, an append-only session logging plugin.",
+  "plugins": [
+    {
+      "name": "claude-log",
+      "source": {
+        "source": "github",
+        "repo": "BYZANTINE26/claude-log"
+      },
+      "description": "Append-only, token-efficient session logging for Claude Code."
+    }
+  ]
+}

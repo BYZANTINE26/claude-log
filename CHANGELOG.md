@@ -47,3 +47,43 @@ All notable changes to claude-log are documented here, following
   fresh, independent end-to-end re-test (new untracked directory with
   multiple files alongside an unrelated tracked-file edit in the same
   turn — all files now correctly reported).
+
+## [0.2.0] - 2026-09-13
+
+### Added
+- `LICENSE` (MIT) and public-listing metadata (`repository`, `homepage`,
+  `license`, `keywords`) in `.claude-plugin/plugin.json`.
+- `.claude-plugin/marketplace.json` — claude-log is now installable
+  through Claude Code's own mechanism (`claude plugin marketplace add`
+  + `claude plugin install`), not just `--plugin-dir` or manual
+  skills-directory cloning. Verified with a real install/uninstall test.
+- A second, independent `summarization_endpoint` provider,
+  `"provider": "claude-code"` — summarize turns through the user's
+  existing Claude Code login instead of a separate OpenAI-compatible
+  server. Any Claude model id, extended thinking disabled
+  (`MAX_THINKING_TOKENS=0`), and hooks/plugins/MCP/tools all disabled
+  for the subprocess (`--safe-mode --tools ""`) so it can't re-trigger
+  claude-log's own hooks or take any action — confirmed recursion-free
+  with a live spike before implementation, not just assumed.
+- Advisory OS-level file locking (`fcntl` on POSIX, `msvcrt` on Windows)
+  around the session log and `.state` file writes, so two Claude Code
+  sessions sharing a `session_id` can no longer interleave writes or
+  lose an update.
+
+### Changed
+- `hooks/hooks.json` switched from shell-form hook commands to exec
+  form (`command`/`args`), for portability — shell form relied on the
+  `#!/usr/bin/env python3` shebang and the executable bit, which is
+  fragile on Windows.
+- `README.md` rewritten for a first-time plugin installer: a real
+  marketplace-install quickstart, a plain-language "what does this do
+  to my machine" section, first-run troubleshooting, both
+  `summarization_endpoint` shapes documented side by side, and a
+  License section.
+
+### Known limitations
+- `python3` must be on `PATH`; on Windows this isn't guaranteed by a
+  standard python.org install (only `python.exe`/`py.exe`) and hasn't
+  been verified on a real Windows machine.
+- The full unit suite passes on real Linux (Docker) in addition to
+  macOS; Windows remains genuinely untested.

@@ -1,5 +1,7 @@
+import concurrent.futures
 import json
 import os
+import time
 
 from claude_log import logger
 from claude_log.config import log_file_path
@@ -127,3 +129,45 @@ def test_get_recent_entries_window_caps_at_configured_max(project_root):
         _append(project_root, "sess1", f"after clear {index}")
     recent = logger.get_recent_entries(project_root, "sess1", configured_window=10)
     assert len(recent) == 10  # 8 + 5 = 13, capped at configured_window
+
+
+def test_append_entry_is_safe_under_concurrent_writers(project_root):
+    """BACKLOG.md #16: two Claude Code sessions sharing a session_id must
+    not corrupt or drop each other's entry. Entries are made large enough
+    (bigger than a typical single write-syscall buffer) that an unlocked
+    writer would be likely to interleave and produce a torn line."""
+    path = logger.initialize_or_resume(project_root, "sess1")
+    writer_count = 20
+    large_text = "x" * 100_000
+
+    def write_one(index):
+        entry = logger.build_entry(f"turn-{index}", "ts", large_text, {"index": index})
+        logger.append_entry(path, entry)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=writer_count) as pool:
+        list(pool.map(write_one, range(writer_count)))
+
+    with open(path, encoding="utf-8") as log_file:
+        entries = [json.loads(line) for line in log_file]  # raises if any line is torn
+    assert len(entries) == writer_count
+    assert {entry["refs"]["index"] for entry in entries} == set(range(writer_count))
+
+
+def test_locked_serializes_concurrent_critical_sections(tmp_path):
+    """Direct test of the lock primitive `mark_context_reset` and
+    `record_reingestion` both rely on: a classic read-then-write race
+    (read counter, sleep, write counter+1) must lose no increments when
+    every critical section goes through the same lock file."""
+    target_path = str(tmp_path / "target.txt")
+    counter = {"value": 0}
+
+    def increment(_index):
+        with logger._locked(target_path):
+            current = counter["value"]
+            time.sleep(0.001)  # widen the race window
+            counter["value"] = current + 1
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+        list(pool.map(increment, range(50)))
+
+    assert counter["value"] == 50

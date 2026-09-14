@@ -1,6 +1,6 @@
 [project]
 name = "claude-log"
-version = "0.1.0"
+version = "0.2.0"
 description = "Append-only, token-efficient session logging for Claude Code."
 requires-python = ">=3.10"
 
