@@ -105,3 +105,19 @@ plugin anyone can install through Claude Code, not just load locally via
   marketplace entry's `source` has no `ref`, so it resolves to whatever
   the repo's default branch is at install time. Parked 2026-09-13, not
   started.
+
+- **[feature] #22** `/claude-log-load [count] --compiled` — instead of
+  printing the last `count` summaries line-by-line, send them to a
+  summarization endpoint (same config/plumbing as `claude_log/summarizer.py`
+  — either the OpenAI-compatible endpoint or the `claude-code` provider)
+  with a distinct "consolidate these into one coherent account of what
+  happened" prompt, and print that single compiled block instead. Needs:
+  a new prompt (not `_build_user_content`'s per-turn summarization one —
+  this is a many-summaries-to-one-narrative prompt), a decision on
+  whether a failed compile call falls back to the current line-by-line
+  output or just errors out (leaning toward falling back — never leave
+  the user with nothing), and the same self-labeling "background
+  context, no action needed" header treatment `claude_log/cli.py:load_recent`
+  already has. `record_reingestion`'s `count` bookkeeping is unaffected
+  either way — this only changes what gets printed, same as the
+  summary-only fix already shipped. Parked 2026-09-14, not started.
