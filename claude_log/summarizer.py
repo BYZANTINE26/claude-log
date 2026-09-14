@@ -22,6 +22,14 @@ _SYSTEM_PROMPT = (
     "Return only the requested structured JSON output."
 )
 
+_COMPILE_SYSTEM_PROMPT = (
+    "You are claude-log's history compiler. Given a chronological list of "
+    "past turn summaries, consolidate them into one coherent account of "
+    "what happened across the whole session — a short narrative, not a "
+    "restatement of each line. Return only the requested structured JSON "
+    "output."
+)
+
 _RESPONSE_SCHEMA = {
     "type": "json_schema",
     "json_schema": {
@@ -41,42 +49,55 @@ def summarize(
     recent_entries: list[dict], prompt: str, assistant_messages: list[str], config: dict
 ) -> str | None:
     """A 1-2 line summary, or None if summarization failed for any reason."""
-    endpoint_config = config.get("summarization_endpoint")
+    user_content = _build_user_content(recent_entries, prompt, assistant_messages)
+    return _call_endpoint(config.get("summarization_endpoint"), _SYSTEM_PROMPT, user_content, "summarize")
+
+
+def compile_summaries(summaries: list[str], config: dict) -> str | None:
+    """One consolidated narrative from several past turn summaries, or
+    None if the call failed for any reason (BACKLOG.md #22) — same
+    honest-failure contract as `summarize()`; the caller decides how to
+    degrade (currently: fall back to printing the summaries as-is)."""
+    user_content = _build_compile_content(summaries)
+    return _call_endpoint(
+        config.get("summarization_endpoint"), _COMPILE_SYSTEM_PROMPT, user_content, "compile_summaries"
+    )
+
+
+def _call_endpoint(endpoint_config: dict | None, system_prompt: str, user_content: str, log_context: str) -> str | None:
+    """Shared dispatch/error-handling for both `summarize()` and
+    `compile_summaries()` — same endpoint config, same two provider
+    paths, same never-fabricate-on-failure contract, just a different
+    prompt and payload per caller."""
     is_claude_code = bool(endpoint_config) and endpoint_config.get("provider") == "claude-code"
     if not endpoint_config or not (is_claude_code or endpoint_config.get("url")):
-        get_logger().warning("summarize: no summarization_endpoint configured")
+        get_logger().warning("%s: no summarization_endpoint configured", log_context)
         return None
 
     try:
         if is_claude_code:
-            summary = call_claude_code_provider(
-                endpoint_config, recent_entries, prompt, assistant_messages
-            )
+            result = call_claude_code_provider(endpoint_config, system_prompt, user_content)
         else:
-            summary = call_openai_compatible_endpoint(
-                endpoint_config, recent_entries, prompt, assistant_messages
-            )
-    except Exception as error:  # noqa: BLE001 - any failure -> summary_failed, never fabricated
-        get_logger().error("summarize: endpoint call failed: %s", error)
+            result = call_openai_compatible_endpoint(endpoint_config, system_prompt, user_content)
+    except Exception as error:  # noqa: BLE001 - any failure -> caller degrades, never fabricated
+        get_logger().error("%s: endpoint call failed: %s", log_context, error)
         return None
 
-    if not summary or not summary.strip():
-        get_logger().warning("summarize: endpoint returned an empty summary")
+    if not result or not result.strip():
+        get_logger().warning("%s: endpoint returned an empty result", log_context)
         return None
-    get_logger().debug("summarize: got a %d-character summary", len(summary))
-    return summary
+    get_logger().debug("%s: got a %d-character result", log_context, len(result))
+    return result
 
 
-def call_openai_compatible_endpoint(
-    endpoint_config: dict, recent_entries: list[dict], prompt: str, assistant_messages: list[str]
-) -> str:
+def call_openai_compatible_endpoint(endpoint_config: dict, system_prompt: str, user_content: str) -> str:
     """POST to `<url>` with an OpenAI-compatible `/v1/chat/completions`
     body; raises on any network, HTTP, or unexpected-shape error."""
     request_body = {
         "model": endpoint_config["model"],
         "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": _build_user_content(recent_entries, prompt, assistant_messages)},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
         ],
         "stream": False,
         "response_format": _RESPONSE_SCHEMA,
@@ -100,9 +121,7 @@ def call_openai_compatible_endpoint(
     return json.loads(content)["summary"]
 
 
-def call_claude_code_provider(
-    endpoint_config: dict, recent_entries: list[dict], prompt: str, assistant_messages: list[str]
-) -> str:
+def call_claude_code_provider(endpoint_config: dict, system_prompt: str, user_content: str) -> str:
     """Summarize via a `claude -p` subprocess, authenticated through
     whatever login the running Claude Code CLI already has — no separate
     API key (BACKLOG.md #20). Raises on any subprocess, timeout, or
@@ -122,7 +141,7 @@ def call_claude_code_provider(
             "summarize: MAX_THINKING_TOKENS=0 has no effect on Fable models (%s)", model
         )
 
-    full_prompt = f"{_SYSTEM_PROMPT}\n\n{_build_user_content(recent_entries, prompt, assistant_messages)}"
+    full_prompt = f"{system_prompt}\n\n{user_content}"
     schema = json.dumps(_RESPONSE_SCHEMA["json_schema"]["schema"])
 
     environment = dict(os.environ)
@@ -159,3 +178,8 @@ def _build_user_content(recent_entries: list[dict], prompt: str, assistant_messa
     turn_block = "\n".join(turn_lines)
 
     return f"Recent turns:\n{recent_block}\n\nCurrent turn:\n{turn_block}"
+
+
+def _build_compile_content(summaries: list[str]) -> str:
+    numbered_lines = [f"{index + 1}. {summary}" for index, summary in enumerate(summaries)]
+    return "Turn summaries, in order:\n" + "\n".join(numbered_lines)

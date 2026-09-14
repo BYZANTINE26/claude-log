@@ -154,7 +154,7 @@ def test_claude_code_provider_command_disables_hooks_tools_and_thinking(monkeypa
 
     monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
     endpoint_config = {"provider": "claude-code", "model": "claude-haiku-4-5-20251001"}
-    summarizer.call_claude_code_provider(endpoint_config, [], "prompt", [])
+    summarizer.call_claude_code_provider(endpoint_config, "system prompt", "user content")
 
     command = captured["command"]
     assert "--safe-mode" in command
@@ -180,7 +180,7 @@ def test_claude_code_provider_warns_when_model_is_fable(monkeypatch):
     monkeypatch.setattr(summarizer.subprocess, "run", fake_run)
     monkeypatch.setattr(summarizer, "get_logger", lambda: FakeLogger())
     endpoint_config = {"provider": "claude-code", "model": "claude-fable-5-1"}
-    summarizer.call_claude_code_provider(endpoint_config, [], "prompt", [])
+    summarizer.call_claude_code_provider(endpoint_config, "system prompt", "user content")
     assert any("Fable" in warning for warning in warnings)
 
 
@@ -221,3 +221,44 @@ def test_build_user_content_includes_recent_and_current_turn():
 def test_build_user_content_with_no_recent_entries():
     content = summarizer._build_user_content([], "do Z", ["Done."])
     assert "(none)" in content
+
+
+def test_compile_summaries_success(endpoint_url):
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.dumps(_openai_response("Built X, then fixed Y, then shipped Z.")).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    config = {"summarization_endpoint": {"url": endpoint_url(Handler), "model": "test-model"}}
+    result = summarizer.compile_summaries(["Built X.", "Fixed Y.", "Shipped Z."], config)
+    assert result == "Built X, then fixed Y, then shipped Z."
+
+
+def test_compile_summaries_no_endpoint_configured_returns_none():
+    assert summarizer.compile_summaries(["did X"], {"summarization_endpoint": None}) is None
+
+
+def test_compile_summaries_endpoint_error_returns_none(endpoint_url):
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.send_response(500)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    config = {"summarization_endpoint": {"url": endpoint_url(Handler), "model": "test-model"}}
+    assert summarizer.compile_summaries(["did X"], config) is None
+
+
+def test_build_compile_content_numbers_summaries_in_order():
+    content = summarizer._build_compile_content(["did X", "did Y", "did Z"])
+    assert "1. did X" in content
+    assert "2. did Y" in content
+    assert "3. did Z" in content
