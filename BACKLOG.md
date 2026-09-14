@@ -164,13 +164,22 @@ plugin anyone can install through Claude Code, not just load locally via
   `#13`-`#15` so it documents the real install path rather than a
   provisional one.
 
-- **[feature] #20** Summarize turns using Claude itself (e.g. Haiku) through
-  the user's existing Claude Code login, as an alternative to configuring a
-  separate OpenAI-compatible `summarization_endpoint` (`#5`) — no separate
-  account, API key, or local model setup, just whatever subscription is
-  already authenticated for Claude Code. Researched directly against
-  `code.claude.com/docs/en/headless.md` and `cli-reference.md` (fetched
-  2026-09-13, not assumed):
+- **[feature] #20** Summarize turns using Claude itself through the user's
+  existing Claude Code login, as a third, fully configurable
+  `summarization_endpoint` provider alongside the existing OpenAI-compatible
+  HTTP path (`#5`) — no separate account, API key, or local model setup for
+  a user who'd rather use their existing subscription. Not hardcoded to any
+  one model: the config must accept any Claude model id the user's plan
+  allows (e.g. `"claude-haiku-4-5-20251001"`, but equally a Sonnet/Opus id),
+  and a user who'd rather keep everything on the current OpenAI-compatible
+  contract (self-hosted or third-party) must be able to do so — this
+  provider is additive, never a replacement for `#5`'s path. Proposed config
+  shape: `"summarization_endpoint": {"provider": "claude-code", "model":
+  "<any-model-id>"}` as a sibling to the existing `{"url": ..., "model":
+  ...}` OpenAI-compatible shape, switched on `provider`'s presence.
+  Researched directly against `code.claude.com/docs/en/headless.md`,
+  `cli-reference.md`, and `model-config.md` (fetched 2026-09-13, not
+  assumed):
   - `claude -p "<prompt>" --model <model-id>` in its **default** (non-`--bare`)
     mode reuses the CLI's existing OAuth/subscription login — no
     `ANTHROPIC_API_KEY` needed. `--bare` mode explicitly does *not* work for
@@ -183,25 +192,36 @@ plugin anyone can install through Claude Code, not just load locally via
     would need is already designed, just needs a second implementation of
     `call_openai_compatible_endpoint`'s role that shells out to `claude -p`
     instead of an HTTP POST.
-  - **Real recursion risk, not hypothetical**: if a `Stop` hook shells out to
-    `claude -p` and claude-log is loaded as a personal plugin for every
-    project (`docs/adr/0001`), that spawned session would load claude-log's
-    own hooks too, potentially re-triggering summarization recursively.
-    `--safe-mode` is the documented flag that disables hooks/plugins/MCP for
-    a session while leaving authentication, model selection, and built-in
-    tools working normally — unlike `--bare`, it does not break subscription
-    auth. The subprocess call this feature needs is therefore `claude -p
-    "..." --model <model-id> --output-format json --json-schema <schema>
-    --safe-mode`, not a bare `-p` call.
+  - **Thinking must be disabled on every call**: `MAX_THINKING_TOKENS=0` in
+    the subprocess's environment turns thinking off on the Anthropic API
+    (per `model-config.md`'s Extended thinking section) — a 1-2 line
+    summary has no business spending thinking tokens, and those tokens are
+    billed even when collapsed. Exception per the same docs: this has no
+    effect on Fable models, which can't have thinking disabled at all — if
+    the user configures a Fable model id here, that caveat needs surfacing,
+    not silently ignored.
+  - **Hooks, plugins, MCP, and built-in tools must all be disabled for this
+    subprocess, not just hooks** — a summarization call must never be able
+    to take an action, only generate text. `--safe-mode` is the documented
+    flag that disables hooks/plugins/MCP for a session while leaving
+    authentication, model selection, and built-in tools (Bash, Read, Edit,
+    etc.) working normally — unlike `--bare`, it does not break
+    subscription auth, but it alone leaves built-in tools reachable. Add
+    `--tools ""` to disable those too. This also closes the **real
+    recursion risk**: without it, if claude-log is loaded as a personal
+    plugin for every project (`docs/adr/0001`), a `Stop` hook's spawned
+    `claude -p` session would load claude-log's own hooks too, potentially
+    re-triggering summarization recursively. The full subprocess call this
+    feature needs is therefore `MAX_THINKING_TOKENS=0 claude -p "..."
+    --model <model-id> --output-format json --json-schema <schema>
+    --safe-mode --tools ""`, not a bare `-p` call.
   - **Information/cost caveat to surface to the user before implementing**:
     each summarization call becomes a real Claude Code invocation, metered
     against whatever the user's subscription (Pro/Max) or Console usage
     limits are — unlike a self-hosted local model (`#5`'s local-model path),
-    this has a real, recurring usage cost per turn, and needs a config
-    option so a user can opt into it deliberately (e.g. a
-    `summarization_endpoint` value like `{"provider": "claude-code", "model":
-    "claude-haiku-4-5-20251001"}` alongside the existing OpenAI-compatible
-    shape) rather than it becoming the silent default.
+    this has a real, recurring usage cost per turn, and must be an explicit
+    opt-in via the config shape above, never a silent default.
   Parked 2026-09-13, not started — needs a design decision on the config
-  shape and a spike confirming `--safe-mode` genuinely prevents recursive
-  hook triggering before real implementation.
+  shape (above is a proposal, not settled) and a spike confirming
+  `--safe-mode --tools ""` genuinely prevents both recursive hook
+  triggering and unwanted tool use before real implementation.
