@@ -4,5 +4,9 @@
   "version": "0.1.0",
   "author": {
     "name": "BYZANTINE26"
-  }
+  },
+  "homepage": "https://github.com/BYZANTINE26/claude-log",
+  "repository": "https://github.com/BYZANTINE26/claude-log",
+  "license": "MIT",
+  "keywords": ["logging", "sessions", "context", "summarization"]
 }
