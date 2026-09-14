@@ -53,22 +53,45 @@ flowchart LR
 
 ## 🤔 Why This Exists
 
-> [!NOTE]
-> Claude Code sessions accumulate context fast. Re-sending full
-> conversation history (or a bloated "rich" summary that re-embeds raw
-> content) to reconstruct where you were burns tokens — worse the longer
-> a project runs.
+This started from hitting the same wall with existing session-memory
+tools: at a small context size their token cost is unnoticeable, but
+memory tools built to call out to an external process for every turn
+tend to send that **entire** context with each call — at ~450K tokens
+into a real project, every single memory-tool call was re-sending
+something on that order, just to produce a couple sentences back. That
+cost doesn't stay proportional; it scales with however large your
+session has already gotten.
 
-- 💸 **Long sessions get expensive.** Full-history replay or verbose
-  re-summarization costs tokens on every single turn.
-- 🧵 **Existing tools lose the journey.** Aggressive compression erases
-  *how* you got to the current state, not just what it is.
+The other half of the problem was the memories themselves. In the name
+of being "rich," some tools record so much per turn that the store
+turns into bloat — dense, but not usefully so, and hard to walk back
+through chronologically to answer "how did we actually get here."
+
+> [!NOTE]
+> claude-log's answer: summarize the user's input and the agent's
+> response for a turn into 1–2 lines of **what happened**, deliberately
+> skipping the tool-call mechanics — the prompt and the response already
+> imply the action taken, so recording *how* it happened alongside *what*
+> happened is redundant. Only the last few summarized entries (not the
+> full session) ever get sent to the summarizer, so the cost per turn
+> stays roughly constant instead of growing with the session.
+
+- 💸 **Token cost stays flat, not proportional.** Only a small,
+  configurable window of past summaries — never the full session — is
+  ever sent to the summarizer.
+- 🪶 **One line, not a rich record.** Each entry is a 1–2 line summary,
+  the turn's `turn_id`, and a git hash — enough for a clean, auditable,
+  chronological trail without becoming its own bloat problem.
 - 🎭 **Silent failure is worse than no summary.** A tool that fabricates a
   placeholder summary when it can't actually summarize is lying to you at
   the exact moment you need to trust the log most.
 - 🧹 **`/clear` should mean clear.** A fresh context window shouldn't
   quietly get fed the last N log entries from before the clear — that's a
   context leak, not a fresh start.
+- 💰 **The summarization bill doesn't have to be a Claude bill.** Point
+  it at any OpenAI-compatible endpoint — including a small local model
+  (a 4-bit ~4B model is plenty for "summarize this turn in one line") —
+  and it costs nothing at all.
 - 🔌 **Setup friction kills adoption.** A tool that needs per-project hook
   configuration doesn't get installed; one that works everywhere the
   moment you install it does.
