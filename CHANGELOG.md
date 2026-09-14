@@ -48,6 +48,17 @@ All notable changes to claude-log are documented here, following
   multiple files alongside an unrelated tracked-file edit in the same
   turn — all files now correctly reported).
 
+## [0.2.1] - 2026-09-14
+
+### Fixed
+- `/claude-log-load [count]` was re-ingesting each entry's full JSON
+  (`turn_id`, `timestamp`, and the entire `refs` block — commit hashes,
+  touched files) into the model's context window, not just the 1–2 line
+  summary the design calls for. `claude_log/cli.py:load_recent` now
+  prints a plain numbered list of summaries only; the audit metadata
+  stays in the log file for humans reading it directly, never
+  re-ingested.
+
 ## [0.2.0] - 2026-09-13
 
 ### Added
