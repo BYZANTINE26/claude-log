@@ -12,7 +12,8 @@ def test_load_recent_prints_and_records_reingestion(project_root, capsys):
 
     assert len(recent) == 3
     printed_lines = capsys.readouterr().out.strip().splitlines()
-    assert len(printed_lines) == 3
+    # summaries only, numbered — no turn_id/timestamp/refs metadata
+    assert printed_lines == ["1. summary 2", "2. summary 3", "3. summary 4"]
 
     # window formula now sees 3 reingested + new turns since reset
     another_path = initialize_or_resume(project_root, "sess1")
