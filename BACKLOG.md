@@ -1,11 +1,5 @@
 # Backlog
 
-- **[technical-debt] #1** No file locking on the session log — two Claude Code
-  sessions sharing a `session_id` would corrupt `<project>/.claude-log/logs/
-  <session_id>.jsonl` since writes aren't coordinated across processes. Parked
-  2026-09-11 during the Core Logging MVP's first planning pass; single-writer
-  is an accepted assumption for now (see `docs/specs/core-logging.md`).
-
 - **[technical-debt] #2** No rotation or retention policy on the per-session
   summarized logs (`<project>/.claude-log/logs/<session_id>.jsonl`,
   `claude_log/logger.py::append_entry`) — they grow unbounded for the life
@@ -91,17 +85,6 @@ plugin anyone can install through Claude Code, not just load locally via
   via the in-app form so users don't need to add a custom marketplace
   first — this runs `claude plugin validate` plus automated safety
   screening. Parked 2026-09-13, not started.
-
-- **[technical-debt] #16** File locking (`#1` above) was an accepted
-  MVP-scale limitation for a personal single-user tool. For a plugin
-  anyone installs, running two Claude Code sessions on the same project
-  (two terminals, or a main session plus a subagent-spawned one) is a
-  common real pattern, not an edge case, and would corrupt the shared
-  `.jsonl` log under concurrent writes. This should be resolved (even a
-  simple `fcntl`/`msvcrt` advisory lock beats none) or at minimum
-  prominently documented as a known limitation before a public release,
-  not left silent. Parked 2026-09-13, supersedes/elevates `#1` for the
-  publish effort specifically.
 
 - **[technical-debt] #17** All testing to date (unit suite plus both real
   end-to-end runs) has been on macOS only. No Windows or Linux

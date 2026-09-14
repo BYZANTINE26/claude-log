@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 3 - File locking (`#16`)
+- **Phase:** 4 - Marketplace distribution (`#13`)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -32,10 +32,22 @@
   installs don't provide a `python3` executable), since a real Windows
   test isn't possible in this environment — no interpreter
   auto-detection built, by explicit decision.
+- Phase 3 done: added `logger._locked()`, an advisory OS-level lock
+  (`fcntl.flock` POSIX, `msvcrt.locking` Windows) around `append_entry`
+  and the `.state` read-modify-write (`mark_context_reset`,
+  `record_reingestion`). Two tests: a direct lock-primitive test against
+  a classic read-then-write race (proven meaningful — fails without the
+  fix, 5/50 increments lost), and a concurrent-writers test against
+  `append_entry` with large entries. Full suite 60/60. Verified with a
+  real headless run — correct log entry, `.jsonl.lock` file created
+  alongside the log as expected. Removed both `#1` and `#16` from
+  `BACKLOG.md`.
 
 ### Test Results
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
+| Full suite (60 tests) | all pass | all pass | ✅ |
+| Lock-primitive race test, unlocked (sanity check) | fails | failed (5/50) | ✅ proves the test is meaningful |
 
 ### Errors
 | Error | Resolution |

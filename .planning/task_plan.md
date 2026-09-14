@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 3 — file locking (`#16`).
+Start Phase 4 — marketplace distribution (`#13`).
 
 ## Current Phase
-Phase 3
+Phase 4
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -30,10 +30,12 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 3: File locking (`#16`, elevates `#1`)
-- [ ] Advisory lock around `logger.append_entry` and the `.state`
-      read-modify-write (`fcntl` POSIX, `msvcrt` Windows)
-- [ ] Test: two concurrent writers, log ends up with both entries intact
-- **Status:** pending
+- [x] Advisory lock (`logger._locked`) around `logger.append_entry` and
+      the `.state` read-modify-write (`fcntl` POSIX, `msvcrt` Windows)
+- [x] Test: two concurrent writers, log ends up with both entries intact
+- [x] Test: direct lock-primitive test against a read-then-write race
+      (fails without the fix: 5/50 increments, confirming it's real)
+- **Status:** done
 
 ### Phase 4: Marketplace distribution (`#13`)
 - [ ] `.claude-plugin/marketplace.json` with a `github` source
