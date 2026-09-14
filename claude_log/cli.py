@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""`/claude-log-load [count]` skill support (see docs/adr/0007).
+"""`/claude-log-load [count] [--compiled]` skill support (see docs/adr/0007,
+BACKLOG.md #22).
 
 Run from the project directory the skill invokes it in. Prints the last
 `count` entries' summaries only — never `turn_id`/`timestamp`/`refs`,
@@ -10,6 +11,12 @@ real summary to re-ingest from one. `count` itself still counts raw log
 entries (matching the window-growth formula in logger.py, which does the
 same), so fewer than `count` lines may actually print if any of the
 tail entries are markers.
+
+`--compiled` sends those summaries to the configured summarization
+endpoint to be consolidated into one narrative instead of printed
+line-by-line. If that call fails or no endpoint is configured, this
+falls back to the normal line-by-line output — a degraded-but-present
+result over an empty one, same philosophy as `summary_failed` markers.
 
 Finding "the current session": skills have no direct session_id the way
 hooks do, so this picks the most-recently-modified session log under
@@ -25,14 +32,17 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from claude_log import config as config_module
+from claude_log import summarizer
 from claude_log.config import project_log_dir
 from claude_log.logger import record_reingestion
 
+_HEADER = "claude-log: recent session summaries (background context, no action needed):"
 
-def load_recent(project_root: str, count: int) -> list[dict]:
-    """Print the last `count` entries' summaries and record the
-    re-ingestion. Same numbered-list convention as
-    `summarizer._build_user_content` uses for the same data.
+
+def load_recent(project_root: str, count: int, compiled: bool = False) -> list[dict]:
+    """Print the last `count` entries' summaries (or, with `compiled`,
+    one consolidated narrative from them) and record the re-ingestion.
 
     `summary_failed`/`turn_lost` entries have no real summary text, so
     they're skipped entirely rather than printed as a placeholder line
@@ -56,9 +66,16 @@ def load_recent(project_root: str, count: int) -> list[dict]:
     recent = entries[-count:]
     summarized = [entry for entry in recent if "summary" in entry]
     if summarized:
-        print("claude-log: recent session summaries (background context, no action needed):")
-        for index, entry in enumerate(summarized):
-            print(f"{index + 1}. {entry['summary']}")
+        summaries = [entry["summary"] for entry in summarized]
+        compiled_text = None
+        if compiled:
+            compiled_text = summarizer.compile_summaries(summaries, config_module.load_config())
+        print(_HEADER)
+        if compiled_text:
+            print(compiled_text)
+        else:
+            for index, summary in enumerate(summaries):
+                print(f"{index + 1}. {summary}")
 
     record_reingestion(project_root, session_id, count)
     return recent
@@ -73,5 +90,21 @@ def _most_recent_session_id(project_root: str) -> str | None:
     return os.path.splitext(os.path.basename(newest))[0]
 
 
+def _parse_arguments(raw: str) -> tuple[int, bool]:
+    """`raw` is everything after the skill name as one shell word (see
+    skills/claude-log-load/SKILL.md — `"$ARGUMENTS"` is quoted, so
+    "10 --compiled" arrives here as a single string, not pre-split
+    argv entries). Order-independent; count defaults to 10."""
+    count = 10
+    compiled = False
+    for token in raw.split():
+        if token == "--compiled":
+            compiled = True
+        else:
+            count = int(token)
+    return count, compiled
+
+
 if __name__ == "__main__":
-    load_recent(os.getcwd(), int(sys.argv[1]) if len(sys.argv) > 1 else 10)
+    arg_count, arg_compiled = _parse_arguments(sys.argv[1]) if len(sys.argv) > 1 else (10, False)
+    load_recent(os.getcwd(), arg_count, arg_compiled)

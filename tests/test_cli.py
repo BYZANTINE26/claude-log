@@ -1,4 +1,4 @@
-from claude_log.cli import load_recent
+from claude_log.cli import _parse_arguments, load_recent
 from claude_log.logger import append_entry, build_entry, get_recent_entries, initialize_or_resume, mark_context_reset
 
 
@@ -61,3 +61,60 @@ def test_load_recent_prints_nothing_when_every_entry_is_a_marker(project_root, c
 
     # no summaries to show -> no header either, not an empty labeled block
     assert capsys.readouterr().out == ""
+
+
+def test_load_recent_compiled_prints_one_consolidated_block(project_root, monkeypatch, capsys):
+    path = initialize_or_resume(project_root, "sess1")
+    append_entry(path, build_entry("t0", "ts", "did X", {}))
+    append_entry(path, build_entry("t1", "ts", "did Y", {}))
+
+    monkeypatch.setattr(
+        "claude_log.cli.summarizer.compile_summaries", lambda summaries, config: "Did X, then did Y."
+    )
+
+    load_recent(project_root, 2, compiled=True)
+
+    printed_lines = capsys.readouterr().out.strip().splitlines()
+    assert printed_lines == [
+        "claude-log: recent session summaries (background context, no action needed):",
+        "Did X, then did Y.",
+    ]
+
+
+def test_load_recent_compiled_falls_back_to_list_on_failure(project_root, monkeypatch, capsys):
+    """BACKLOG.md #22: no endpoint / a failed compile call degrades to
+    the normal line-by-line output — never an error, never nothing."""
+    path = initialize_or_resume(project_root, "sess1")
+    append_entry(path, build_entry("t0", "ts", "did X", {}))
+    append_entry(path, build_entry("t1", "ts", "did Y", {}))
+
+    monkeypatch.setattr("claude_log.cli.summarizer.compile_summaries", lambda summaries, config: None)
+
+    load_recent(project_root, 2, compiled=True)
+
+    printed_lines = capsys.readouterr().out.strip().splitlines()
+    assert printed_lines == [
+        "claude-log: recent session summaries (background context, no action needed):",
+        "1. did X",
+        "2. did Y",
+    ]
+
+
+def test_parse_arguments_count_only():
+    assert _parse_arguments("5") == (5, False)
+
+
+def test_parse_arguments_compiled_only_defaults_count():
+    assert _parse_arguments("--compiled") == (10, True)
+
+
+def test_parse_arguments_count_then_flag():
+    assert _parse_arguments("5 --compiled") == (5, True)
+
+
+def test_parse_arguments_flag_then_count():
+    assert _parse_arguments("--compiled 5") == (5, True)
+
+
+def test_parse_arguments_empty_string_uses_defaults():
+    assert _parse_arguments("") == (10, False)
