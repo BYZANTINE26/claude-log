@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="icon.png" alt="claude-log icon" width="160" />
+
 # 🪶 claude-log
 
 **Your Claude Code sessions, remembered — without the token bill.**
@@ -13,9 +15,37 @@ summary per turn, not your whole conversation history replayed back at you.
 
 [Why](#-why-this-exists) •
 [How it works](#-how-it-works) •
+[Architecture](#%EF%B8%8F-architecture) •
 [Install](#-installation) •
 [Configure](#%EF%B8%8F-configuration) •
 [Troubleshooting](#-first-run-troubleshooting)
+
+```mermaid
+%%{init: {'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 70}, 'themeVariables': {'fontFamily': 'Helvetica Neue, Arial, sans-serif', 'fontSize': '15px', 'background': '#FFFFFF'}}}%%
+flowchart LR
+    You("① 🧑‍💻<br/><b>You chat with<br/>Claude Code</b>")
+    Watch("② 🪶<br/><b>claude-log watches<br/>in the background</b>")
+    Ends("③ ✅<br/><b>A turn<br/>finishes</b>")
+    Sum("④ 🧠<br/><b>Summarized<br/>in one line</b>")
+    Log("⑤ 📜<br/><b>Appended to the<br/>session log</b>")
+    Resume("⑥ 🔁<br/><b>Recent lines<br/>feed back in</b>")
+
+    You --> Watch --> Ends --> Sum --> Log --> Resume --> You
+
+    classDef c1 fill:#FBEBDD,stroke:#F6B27A,stroke-width:2px,color:#3A2410
+    classDef c2 fill:#FADFC9,stroke:#F3A05E,stroke-width:2px,color:#3A2410
+    classDef c3 fill:#F9D3B4,stroke:#F08D42,stroke-width:2px,color:#3A2410
+    classDef c4 fill:#F8C7A0,stroke:#ED7B2E,stroke-width:2px,color:#331F0C
+    classDef c5 fill:#F6B88A,stroke:#E8672A,stroke-width:2px,color:#2E1B08
+    classDef c6 fill:#F4A96D,stroke:#E0561A,stroke-width:2px,color:#2A1706
+    class You c1
+    class Watch c2
+    class Ends c3
+    class Sum c4
+    class Log c5
+    class Resume c6
+    linkStyle default stroke:#F3A05E,stroke-width:2px
+```
 
 </div>
 
@@ -81,6 +111,15 @@ cheaply from a handful of recent entries, without redundancy.
 [`docs/specs/core-logging.md`](docs/specs/core-logging.md) for the full
 design, and [`docs/adr/`](docs/adr/) for the reasoning behind each of
 these decisions.
+
+## 🗺️ Architecture
+
+How one turn flows through the five hooks above, end to end — hook
+scripts (no shared memory between them), the per-turn buffer and
+session-log files they round-trip through, and the two places a turn
+can get summarized.
+
+📖 **[See the full diagram and walkthrough → `docs/architecture.md`](docs/architecture.md)**
 
 ## 🖥️ What This Does to Your Machine
 
