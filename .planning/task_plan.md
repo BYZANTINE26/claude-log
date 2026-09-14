@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 7 — cross-platform testing (`#17`).
+All planned phases done. Confirm with the user before merging into `dev`.
 
 ## Current Phase
-Phase 7
+Phase 7 (done)
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -68,10 +68,15 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 7: Cross-platform testing (`#17`)
-- [ ] Verify everywhere this environment allows
-- [ ] Document any genuinely untestable case (e.g. real Windows) as an
-      honest, named gap rather than assumed fixed
-- **Status:** pending
+- [x] Full 65-test unit suite verified on real Linux (Docker,
+      python:3.12-slim) — real evidence, not assumed, for the
+      `fcntl`-based locking and git subprocess calls
+- [x] Confirmed the `claude` CLI installs cleanly in a Linux container
+      too; decided against a full headless run there (would need
+      personal auth credentials in a throwaway container)
+- [x] Windows documented as an honest, still-open gap (`#17` narrowed,
+      not closed) — no Windows container path available here
+- **Status:** done
 
 ## Decisions Made
 | Decision | Rationale |

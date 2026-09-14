@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 7 - Cross-platform testing (`#17`)
+- **Phase:** 7 - Cross-platform testing (`#17`) — done, all phases complete
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -83,12 +83,29 @@
   uninstall/`${CLAUDE_PLUGIN_DATA}` note. Full suite still 65/65, both
   manifests still validate clean. Removed `#19` and `#18` from
   `BACKLOG.md`.
+- Phase 7 done: ran the full 65-test unit suite inside a real Linux
+  container (Docker, `python:3.12-slim`) — genuine evidence for the
+  `fcntl`-based file locking, git subprocess calls, and path handling on
+  a different kernel/filesystem than the macOS this project was
+  developed on. Confirmed the `claude` CLI installs cleanly in a Linux
+  container too; decided against a full headless run there, since it
+  would require placing personal auth credentials in a throwaway
+  container for marginal extra confidence beyond what the unit suite
+  already covers. Windows remains genuinely untested — no Windows
+  container path available in this environment. Narrowed `#17` in
+  `BACKLOG.md` from "no cross-platform testing at all" to "Windows
+  specifically," rather than closing it outright. This was the last
+  planned phase — all of `BACKLOG.md`'s `## Publish` section (`#13`-
+  `#20`) is now resolved except `#17` (narrowed, not closed) and `#21`
+  (split out, genuinely separate, still open).
 
 ### Test Results
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
 | Full suite (60 tests) | all pass | all pass | ✅ |
 | Lock-primitive race test, unlocked (sanity check) | fails | failed (5/50) | ✅ proves the test is meaningful |
+| Full suite (65 tests, Claude-as-summarizer added) | all pass | all pass | ✅ |
+| Full suite on real Linux (Docker, python:3.12-slim) | all pass | all pass | ✅ |
 
 ### Errors
 | Error | Resolution |
