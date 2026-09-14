@@ -73,19 +73,6 @@ directly rather than assumed) on what's required to ship claude-log as a
 plugin anyone can install through Claude Code, not just load locally via
 `--plugin-dir` or hand-clone into `~/.claude/skills/`.
 
-- **[feature] #13** No marketplace distribution — claude-log currently
-  only loads via `--plugin-dir` (a dev/test flag) or by manually cloning
-  into `~/.claude/skills/claude-log/` (the skills-directory route chosen
-  deliberately in `docs/adr/0001` for personal use). `/plugin install
-  claude-log@<marketplace>` — the actual "anyone installs through Claude
-  Code" flow — requires a `.claude-plugin/marketplace.json` (repo root or
-  a separate marketplace repo) listing claude-log with a `source` (e.g.
-  `{"source": "github", "repo": "BYZANTINE26/claude-log"}`), hosted on
-  GitHub. Optionally, submit to the public `claude-community` marketplace
-  via the in-app form so users don't need to add a custom marketplace
-  first — this runs `claude plugin validate` plus automated safety
-  screening. Parked 2026-09-13, not started.
-
 - **[technical-debt] #17** All testing to date (unit suite plus both real
   end-to-end runs) has been on macOS only. No Windows or Linux
   verification exists. Given `#15`, this isn't just a formality — running
@@ -184,3 +171,16 @@ plugin anyone can install through Claude Code, not just load locally via
   shape (above is a proposal, not settled) and a spike confirming
   `--safe-mode --tools ""` genuinely prevents both recursive hook
   triggering and unwanted tool use before real implementation.
+
+- **[good-to-have] #21** Submit claude-log to the public `claude-community`
+  marketplace (via the in-app forms at claude.ai or platform.claude.com),
+  so users don't need to add `BYZANTINE26/claude-log` as a custom
+  marketplace themselves first. Split out from the original marketplace-
+  distribution ticket, which is otherwise resolved —
+  `.claude-plugin/marketplace.json` exists and a real `claude plugin
+  marketplace add` + `claude plugin install` test passed. Submission runs
+  `claude plugin validate` plus automated safety screening, and only
+  makes sense once the real plugin content lands on `main` — the
+  marketplace entry's `source` has no `ref`, so it resolves to whatever
+  the repo's default branch is at install time. Parked 2026-09-13, not
+  started.

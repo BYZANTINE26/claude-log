@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 4 — marketplace distribution (`#13`).
+Start Phase 5 — Claude-as-summarizer provider (`#20`).
 
 ## Current Phase
-Phase 4
+Phase 5
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -38,10 +38,12 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 4: Marketplace distribution (`#13`)
-- [ ] `.claude-plugin/marketplace.json` with a `github` source
-- [ ] Real `/plugin marketplace add` + `/plugin install` test in a
-      throwaway project, not just `--plugin-dir`
-- **Status:** pending
+- [x] `.claude-plugin/marketplace.json` with a `github` source (no
+      explicit `ref` — resolves to the repo's default branch, per the
+      decision that everything lands on `main` once ready to ship)
+- [x] Real `claude plugin marketplace add` + `claude plugin install` test
+      in a throwaway project, not just `--plugin-dir`
+- **Status:** done
 
 ### Phase 5: Claude-as-summarizer provider (`#20`)
 - [ ] Spike: confirm `claude -p ... --safe-mode --tools ""` neither

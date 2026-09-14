@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 4 - Marketplace distribution (`#13`)
+- **Phase:** 5 - Claude-as-summarizer provider (`#20`)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -42,6 +42,24 @@
   real headless run — correct log entry, `.jsonl.lock` file created
   alongside the log as expected. Removed both `#1` and `#16` from
   `BACKLOG.md`.
+- Phase 4 done: added `.claude-plugin/marketplace.json`. Real test via
+  `claude plugin marketplace add BYZANTINE26/claude-log@feature/publish-plugin`
+  + `claude plugin install claude-log@claude-log` in a fresh throwaway
+  project — both succeeded mechanically. Found a real, confirmed gap:
+  the marketplace's own `@ref` only pins where `marketplace.json` itself
+  is fetched from; each plugin entry's own `source` (no `ref` set)
+  independently resolves to the repo's default branch, `main`, which
+  today only has the original pre-implementation commit — confirmed via
+  `claude plugin list` showing the installed version pinned to `main`'s
+  commit SHA, with no hooks firing as a direct, correct consequence (not
+  a bug). Per explicit user decision, no `ref` was added to work around
+  this — resolved instead by shipping everything to `main` once ready,
+  at which point the same mechanism works with no special-casing.
+  Verified the install *mechanism* itself works via a temporary,
+  never-committed local pin to `feature/publish-plugin`'s ref, reverted
+  before committing anything. Cleaned up the test marketplace/plugin
+  registration and `~/.claude/settings.json` afterward. Removed `#13`
+  from `BACKLOG.md`.
 
 ### Test Results
 | Test | Expected | Actual | Status |
