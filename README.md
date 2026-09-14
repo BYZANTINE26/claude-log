@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="icon.png" alt="claude-log icon" width="160" />
+<img src="icon.svg" alt="claude-log icon" width="160" />
 
 # 🪶 claude-log
 
