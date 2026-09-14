@@ -1,0 +1,14 @@
+# Runtime session logs and buffers — machine/session-specific, not source
+.claude-log/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Local reference material, not for commit
+curl.sh

@@ -1,0 +1,318 @@
+# Plan: claude-log Core Logging (redo)
+
+## Context
+The first implementation attempt (`feature/core-logging-mvp`) was
+reviewed and scrapped — real design gaps (tool-payload leakage, no real
+turn identity, no crash/interrupt safety, ambiguous file-touch tracking,
+per-project-only distribution) surfaced after the branch fired its own
+hooks live. This plan replaces it entirely, incorporating everything
+settled during the `grill-with-docs` redo: `INTENT.md`, `SPEC.md`,
+`docs/specs/core-logging.md`, and seven ADRs in `docs/adr/`.
+
+This plan covers Core Logging only. Real local model *setup guidance*
+(the summarizer's HTTP contract is real and final — only "which model to
+run" is deferred), and benchmarking against claude-mem, remain their own
+phases in `BACKLOG.md`.
+
+## Locked-in decisions
+See `docs/adr/0001` through `0007` for full reasoning. Summary:
+- **Distribution**: personal skills-directory plugin (`~/.claude/skills/
+  claude-log/`), not per-project hook registration (ADR-0001).
+- **Storage split**: `~/.claude-log/` for plugin config + internal log;
+  `<project>/.claude-log/` for session logs, buffers, and state
+  (ADR-0002).
+- **Log integrity**: failures and orphaned turns become explicit
+  `summary_failed`/`turn_lost` marker entries, never fabricated or
+  silently dropped (ADR-0003).
+- **No Rich mode, no `PostToolUse`**: one entry shape; turn context is
+  prompt + all assistant messages + a git-diff-derived file list, not
+  per-tool-call tracking (ADR-0004, ADR-0005).
+- **Turn buffers keyed by `<session_id>__<prompt_id>.json`**, so an
+  interrupted or overlapping turn can never corrupt another (ADR-0006).
+- **`turn_id` = Claude Code's own `prompt_id`** (a UUID), not a
+  synthesized counter.
+- **Session lifecycle**: `SessionStart` marks a context-reset boundary on
+  `/clear`; the recent-context window naturally grows via
+  `min(N, reingested_count + entries_since_reset)`; `/claude-log-load
+  [count]` (default 10) is a plugin skill, not a hook; `SessionEnd` does
+  a final orphan sweep (ADR-0007).
+- **Summarizer**: OpenAI-compatible `/v1/chat/completions` endpoint,
+  configured (URL, model, auth, sampling params) in
+  `~/.claude-log/config.json`. Full turn text passed uncut — no
+  pre-truncation.
+- **Internal logging**: stdlib `logging` + `RotatingFileHandler` to
+  `~/.claude-log/internal.log`, levels `debug/info/warning/error`
+  controlled by config, no stderr.
+
+## File/module layout
+```
+.claude-plugin/
+  plugin.json                # name, description, version
+hooks/
+  hooks.json                 # registers all 5 hooks directly against
+                              # claude_log/hooks/*.py — no wrapper scripts,
+                              # plugins resolve their own root, so the
+                              # sys.path-shim-per-file that per-project
+                              # hook registration needed doesn't apply
+skills/
+  claude-log-load/
+    SKILL.md                 # /claude-log-load [count]
+claude_log/
+  __init__.py
+  config.py          # load ~/.claude-log/config.json, DEFAULT_CONFIG,
+                      # home/project path resolution, rotating internal
+                      # logger setup — one "plugin environment" module
+  buffer.py           # atomic per-turn buffer (prompt, assistant_messages,
+                       # commit_before, dirty_before), orphan sweep
+  logger.py            # initialize_or_resume, append_entry, build_entry,
+                       # get_recent_entries + its window-size formula
+                       # (reads/writes .state/<session_id>.json itself —
+                       # the only caller of that state, so it lives here)
+  summarizer.py        # summarize(), call_openai_compatible_endpoint()
+  git_snapshot.py       # snapshot_git_state(), files_touched()
+  hooks/
+    __init__.py
+    _hook_io.py
+    session_start.py
+    user_prompt_submit.py
+    message_display.py
+    stop.py
+    session_end.py
+tests/
+  conftest.py
+  test_buffer.py
+  test_logger.py
+  test_summarizer.py
+  test_git_snapshot.py
+  test_hooks_*.py (one per hook)
+  fixtures/
+pyproject.toml
+```
+Dropped from the original sketch: a `bin/` directory of thin wrapper
+scripts and separate `paths.py`/`session_state.py`/`internal_log.py`
+modules — each was either boilerplate for a problem the plugin
+architecture already solves (`bin/`), or a handful of one-line functions
+with a single caller that didn't earn a separate file (ponytail:
+"fewest files possible... once you understand the problem").
+
+## Module interfaces (signatures only)
+
+**config.py**
+```python
+DEFAULT_CONFIG = {
+    "enabled": True,
+    "recent_context_window": 10,
+    "summarization_endpoint": None,  # dict: url/model/api_key/extra_params
+    "log_level": "info",
+}
+def load_config() -> dict: ...  # reads ~/.claude-log/config.json
+
+def plugin_home() -> str: ...                  # ~/.claude-log
+def project_log_dir(project_root: str) -> str: ...  # <project>/.claude-log
+def log_file_path(project_root: str, session_id: str) -> str: ...
+def buffer_path(project_root: str, session_id: str, prompt_id: str) -> str: ...
+def state_path(project_root: str, session_id: str) -> str: ...
+
+def get_logger() -> logging.Logger: ...  # rotating handler, level from config
+```
+
+**buffer.py**
+```python
+def start_turn(buffer_path: str, prompt_text: str,
+               commit_before: str | None, dirty_before: dict) -> None: ...
+def append_assistant_message(buffer_path: str, message_text: str) -> None: ...
+def read_and_clear(buffer_path: str) -> dict: ...
+def sweep_orphaned(project_root: str, session_id: str,
+                    keep_prompt_id: str) -> list[dict]: ...  # -> turn_lost markers
+```
+
+**logger.py**
+```python
+def initialize_or_resume(project_root: str, session_id: str) -> str: ...
+def get_recent_entries(project_root: str, session_id: str,
+                        configured_window: int) -> list[dict]: ...
+    # internally: reads/writes .state/<session_id>.json (mark_context_reset,
+    # record_reingestion happen via this module too) and applies
+    # min(configured_window, reingested_count + entries_since_reset)
+def append_entry(log_path: str, entry: dict) -> None: ...
+def build_entry(turn_id: str, timestamp: str, summary: str | None,
+                 refs: dict, failure_flag: str | None = None) -> dict: ...
+def mark_context_reset(project_root: str, session_id: str) -> None: ...
+def record_reingestion(project_root: str, session_id: str, count: int) -> None: ...
+```
+
+**summarizer.py**
+```python
+def summarize(recent_entries: list[dict], prompt: str,
+              assistant_messages: list[str], config: dict) -> str | None: ...
+    # None on failure -> caller writes a summary_failed marker
+def call_openai_compatible_endpoint(endpoint_config: dict,
+                                     recent_entries: list[dict],
+                                     prompt: str,
+                                     assistant_messages: list[str]) -> str: ...
+```
+
+**git_snapshot.py**
+```python
+def snapshot_git_state(project_root: str,
+                        known_dirty_paths: set[str] | None = None) -> dict: ...
+    # {"commit": str | None, "dirty": {path: content_hash}}
+def files_touched(commit_before, commit_after, dirty_before, dirty_after,
+                   project_root: str) -> list[str]: ...
+```
+
+## Plugin manifest sketch
+```json
+// .claude-plugin/plugin.json
+{"name": "claude-log", "description": "Append-only, token-efficient session logging.", "version": "0.1.0"}
+```
+```json
+// hooks/hooks.json
+{
+  "hooks": {
+    "SessionStart": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_start.py"}]}],
+    "UserPromptSubmit": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/user_prompt_submit.py"}]}],
+    "MessageDisplay": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/message_display.py"}]}],
+    "Stop": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/stop.py"}]}],
+    "SessionEnd": [{"matcher": "*", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/claude_log/hooks/session_end.py"}]}]
+  }
+}
+```
+Each hook script is directly executable (`#!/usr/bin/env python3` +
+`chmod +x`) and resolves its own package root once, at the top, before
+importing `claude_log` — the one-line equivalent of what the dropped
+`bin/` wrappers did, without a second file per hook.
+
+## Order of implementation
+0. **One remaining field-name ambiguity**: `MessageDisplay`'s documented
+   example payload doesn't show `prompt_id` even though it's supposedly a
+   common field (v2.1.196+) — only its own `turn_id`/`message_id`. The
+   hook code reads `hook_input.get("prompt_id") or hook_input.get("turn_id")`
+   defensively rather than guessing which is present; confirmed for real
+   during the manual smoke test (step 8), not blocking implementation.
+   All other fields for all five hooks are confirmed directly from the
+   hooks reference's per-event sections (not just the summary table).
+1. `config.py` — settings load, path resolution, internal logger setup;
+   pure/independent, unit tested immediately.
+2. `git_snapshot.py` — the riskiest new piece (hash-diff correctness for
+   pre-existing dirty/untracked files per ADR-0004); tested thoroughly
+   in isolation before anything depends on it.
+3. `buffer.py` — atomic per-turn state + orphan sweep.
+4. `logger.py` — JSONL append/tail-read, including the window-size
+   formula and `.state/<session_id>.json` reset/re-ingestion handling
+   (ADR-0007), tested against those scenarios directly.
+5. `summarizer.py` — OpenAI-compatible HTTP call, tested against a local
+   `http.server` fixture for success, timeout, and malformed-response
+   paths (all three must yield `summary_failed`, never fabricated text).
+6. `hooks/_hook_io.py`, then the five hook modules (each directly
+   executable, no wrapper scripts) + the `claude-log-load` skill.
+7. Assemble the plugin structure (`.claude-plugin/plugin.json`,
+   `hooks/hooks.json`), test locally via `claude --plugin-dir`.
+8. Manual smoke test (see Verification) in a real Claude Code session.
+9. Update `BACKLOG.md`, `CHANGELOG.md`, `README.md`.
+
+## Verification
+**Unit tests** (`pytest`, no live Claude Code needed): buffer atomicity
+and orphan sweep; git-snapshot diffing including the pre-existing-dirty-
+file exclusion case; window-size formula across reset/no-reset/
+re-ingestion states; summarizer success/timeout/malformed-response paths
+all yielding the correct marker on failure; hook sequences via canned
+fixtures including an interrupted-turn scenario.
+
+**Manual smoke test** (real Claude Code session, `claude --plugin-dir`):
+1. Fresh session: confirm `<project>/.claude-log/logs/<session_id>.jsonl`
+   appears after the first completed turn, not at `SessionStart`.
+2. One small edit turn: confirm one log line, plausible summary,
+   `refs.commit_before`/`commit_after`, and `refs.files` containing the
+   edited path.
+3. `/clear`, then one turn with no `/claude-log-load`: confirm the
+   summarizer receives empty/near-empty recent context.
+4. `/claude-log-load 5`, then a turn: confirm the window formula reflects
+   5 + entries-since-reset.
+5. Interrupt a turn (Ctrl+C) mid-generation, then submit a new prompt:
+   confirm a `turn_lost` marker appears and the new turn logs cleanly.
+6. Resume the same session: confirm the `.jsonl` file grows, not
+   recreated.
+
+## Backlog items
+See `BACKLOG.md` — kept as the single source of truth, not duplicated
+here.
+
+---
+
+# Plan: Publish (feature/publish-plugin)
+
+## Context
+Core Logging is implemented, tested twice end-to-end, and merged to
+`dev`. This phase turns claude-log from "something you load with
+`--plugin-dir` or clone by hand" into a plugin a stranger can install
+through Claude Code's own mechanism. Scope is exactly `BACKLOG.md`'s
+`## Publish` section, tickets `#13`-`#20` — see that section for the
+full research behind each decision below; this plan doesn't repeat it,
+only sequences it.
+
+## Order of implementation
+1. **`#14` — manifest + license.** Add `repository`, `homepage`,
+   `license`, `keywords` to `.claude-plugin/plugin.json`; add a real
+   `LICENSE` file. Foundational — a marketplace entry and a stranger's
+   first look at the repo both need this, and nothing else here depends
+   on it, so it goes first as the cheapest real progress.
+2. **`#15` — cross-platform hook invocation.** Switch `hooks/hooks.json`
+   to exec form (`"command"`/`"args"`) instead of a bare shell-form path,
+   and decide how to handle the Windows `python3`-vs-`python` gap
+   (documented as a hard prerequisite, or a fallback). Goes before `#13`/
+   `#19` since both would otherwise document/ship a broken install path.
+3. **`#16` — file locking.** An advisory lock (`fcntl` on POSIX,
+   `msvcrt` on Windows) around `logger.append_entry` and the `.state`
+   read-modify-write, so two concurrent sessions on one project can't
+   corrupt the shared log. Independent of `#13`-`#15`, but a real
+   correctness gap that should land before calling this "production."
+4. **`#13` — marketplace distribution.** `.claude-plugin/marketplace.json`
+   listing claude-log with a `github` source; a real
+   `/plugin marketplace add` + `/plugin install` test, not just
+   `--plugin-dir`. Needs `#14`/`#15` landed first so what it distributes
+   is actually correct.
+5. **`#20` — Claude-as-summarizer provider.** A new `"provider":
+   "claude-code"` shape for `summarization_endpoint`, alongside (never
+   replacing) the existing OpenAI-compatible path: any Claude model id
+   the user configures, `MAX_THINKING_TOKENS=0` to disable thinking,
+   `--safe-mode --tools ""` so the subprocess can't trigger claude-log's
+   own hooks or take any action. Placed after `#13`/`#16` since it's a
+   real feature addition best landed once the plugin's install/
+   correctness story is solid, and before `#19` so the README documents
+   it too. Needs a spike first, confirming `--safe-mode --tools ""`
+   genuinely isolates the subprocess, before wiring it into
+   `summarizer.py` for real.
+6. **`#19` — README pass for installers.** Marketplace-install
+   quickstart, a plain-language "what does this do to my machine"
+   section, first-run troubleshooting, license/repo links, and how to
+   opt into `#20`'s Claude-as-summarizer provider. Needs `#13` landed so
+   the quickstart documents the real command, not a provisional one.
+   Folds in `#18`'s uninstall/`${CLAUDE_PLUGIN_DATA}` note.
+7. **`#17` — cross-platform testing.** Real verification everywhere
+   this environment allows; anything genuinely untestable here (e.g. a
+   real Windows machine) gets documented as an honest, named gap rather
+   than assumed fixed.
+
+## Verification
+Per step, not just at the end:
+- `#14`: `claude plugin validate . --strict` passes clean with the new
+  fields recognized (not "unrecognized field" warnings).
+- `#15`: a real headless run still logs a correct entry after switching
+  to exec form; Windows behavior documented even if not testable here.
+- `#16`: a test that starts two writers concurrently and confirms the
+  log ends up with both entries, neither corrupted nor lost.
+- `#13`: a real `/plugin marketplace add <this repo>` +
+  `/plugin install claude-log@<marketplace>` in a throwaway test project,
+  not just `--plugin-dir`.
+- `#20`: a spike script confirming a `claude -p ... --safe-mode --tools ""`
+  subprocess neither triggers claude-log's own hooks nor executes any
+  tool call, before wiring it into `summarizer.py`; then a unit/
+  integration test against that real subprocess path.
+- `#19`: read the finished README as if seeing this repo for the first
+  time — does it answer "how do I install this" and "what does it do to
+  my machine" without needing to open another file?
+
+## Backlog items
+See `BACKLOG.md`'s `## Publish` section — kept as the single source of
+truth for scope and rationale, not duplicated here.
