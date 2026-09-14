@@ -73,11 +73,18 @@ directly rather than assumed) on what's required to ship claude-log as a
 plugin anyone can install through Claude Code, not just load locally via
 `--plugin-dir` or hand-clone into `~/.claude/skills/`.
 
-- **[technical-debt] #17** All testing to date (unit suite plus both real
-  end-to-end runs) has been on macOS only. No Windows or Linux
-  verification exists. Given `#15`, this isn't just a formality — running
-  the plugin for real on Windows would likely surface a genuine bug, not
-  just confirm a formality. Parked 2026-09-13.
+- **[technical-debt] #17** No real Windows verification exists. The full
+  unit suite (65 tests) now passes on real Linux too (Docker,
+  `python:3.12-slim`, 2026-09-13) — genuine evidence for the `fcntl`-based
+  file locking (`#16`), git subprocess calls, and path handling on a
+  different kernel/filesystem, not just macOS. The `claude` CLI installs
+  cleanly in a Linux container as well, but a real headless run there
+  would need personal auth credentials placed in a throwaway container,
+  which wasn't done. Windows remains genuinely untested — no Windows
+  container path was available, and `#15`'s exec-form fix plus the
+  `python3`-vs-`python` prerequisite are still unverified for real there.
+  Parked 2026-09-13, narrowed from "no cross-platform testing at all" to
+  "Windows specifically."
 
 - **[research]** Tickets `#10` (unreproduced `files: []` anomaly) and
   `#11` (queued-prompt sequencing) are low-stakes for a single careful
