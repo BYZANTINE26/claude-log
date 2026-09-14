@@ -3,7 +3,7 @@
 ## Session: 2026-09-13
 
 ### Current Status
-- **Phase:** 5 - Claude-as-summarizer provider (`#20`)
+- **Phase:** 6 - README pass for installers (`#19`)
 - **Started:** 2026-09-13
 
 ### Actions Taken
@@ -60,6 +60,19 @@
   before committing anything. Cleaned up the test marketplace/plugin
   registration and `~/.claude/settings.json` afterward. Removed `#13`
   from `BACKLOG.md`.
+- Phase 5 done: added `summarizer.call_claude_code_provider()` for
+  `"provider": "claude-code"`. Two spikes run before writing any
+  production code: (1) `--safe-mode --tools ""` with `--plugin-dir`
+  pointing at claude-log itself produced zero `internal.log` activity —
+  confirmed recursion-free, not assumed; (2) the full command shape
+  (`claude -p ... --output-format json --json-schema ... --safe-mode
+  --tools ""`, `MAX_THINKING_TOKENS=0`) returns a correct
+  `structured_output.summary` with `thinking_tokens: 0`. 6 unit tests
+  (mocked subprocess). Then a real end-to-end run through the actual
+  hook pipeline with the provider genuinely configured: a real
+  (non-`summary_failed`) summary, one clean hook cycle in
+  `internal.log`, no recursion. Full suite 65/65. Removed `#20` from
+  `BACKLOG.md`.
 
 ### Test Results
 | Test | Expected | Actual | Status |

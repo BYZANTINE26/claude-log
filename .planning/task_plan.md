@@ -7,10 +7,10 @@ claude-log can be installed by a stranger through Claude Code's own
 plugin mechanism.
 
 ## Next Step
-Start Phase 5 — Claude-as-summarizer provider (`#20`).
+Start Phase 6 — README pass for installers (`#19`, folds in `#18`).
 
 ## Current Phase
-Phase 5
+Phase 6
 
 ## Phases
 Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
@@ -46,14 +46,18 @@ Copied from `.claude/plans/PLAN.md`'s Publish "Order of implementation".
 - **Status:** done
 
 ### Phase 5: Claude-as-summarizer provider (`#20`)
-- [ ] Spike: confirm `claude -p ... --safe-mode --tools ""` neither
-      triggers claude-log's own hooks nor executes a tool call
-- [ ] `"provider": "claude-code"` config shape, additive to (not
+- [x] Spike: confirmed `claude -p ... --safe-mode --tools ""` neither
+      triggers claude-log's own hooks nor executes a tool call (zero
+      internal.log activity even with --plugin-dir pointing at
+      claude-log itself)
+- [x] `"provider": "claude-code"` config shape, additive to (not
       replacing) the OpenAI-compatible path
-- [ ] `MAX_THINKING_TOKENS=0` in the subprocess environment; surface the
-      Fable-model exception rather than silently ignoring it
-- [ ] Any Claude model id accepted, not hardcoded to Haiku
-- **Status:** pending
+- [x] `MAX_THINKING_TOKENS=0` in the subprocess environment; warns
+      rather than silently ignoring the Fable-model exception
+- [x] Any Claude model id accepted, not hardcoded to Haiku
+- [x] Real end-to-end verification through the actual hook pipeline:
+      genuine summary, one clean hook cycle, no recursion
+- **Status:** done
 
 ### Phase 6: README pass for installers (`#19`, folds in `#18`)
 - [ ] Marketplace-install quickstart
