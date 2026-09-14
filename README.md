@@ -20,32 +20,7 @@ summary per turn, not your whole conversation history replayed back at you.
 [Configure](#%EF%B8%8F-configuration) •
 [Troubleshooting](#-first-run-troubleshooting)
 
-```mermaid
-%%{init: {'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 70}, 'themeVariables': {'fontFamily': 'Helvetica Neue, Arial, sans-serif', 'fontSize': '15px', 'background': '#FFFFFF'}}}%%
-flowchart LR
-    You("① 🧑‍💻<br/><b>You chat with<br/>Claude Code</b>")
-    Watch("② 🪶<br/><b>claude-log watches<br/>in the background</b>")
-    Ends("③ ✅<br/><b>A turn<br/>finishes</b>")
-    Sum("④ 🧠<br/><b>Summarized<br/>in one line</b>")
-    Log("⑤ 📜<br/><b>Appended to the<br/>session log</b>")
-    Resume("⑥ 🔁<br/><b>Recent lines<br/>feed back in</b>")
-
-    You --> Watch --> Ends --> Sum --> Log --> Resume --> You
-
-    classDef c1 fill:#FBEBDD,stroke:#F6B27A,stroke-width:2px,color:#3A2410
-    classDef c2 fill:#FADFC9,stroke:#F3A05E,stroke-width:2px,color:#3A2410
-    classDef c3 fill:#F9D3B4,stroke:#F08D42,stroke-width:2px,color:#3A2410
-    classDef c4 fill:#F8C7A0,stroke:#ED7B2E,stroke-width:2px,color:#331F0C
-    classDef c5 fill:#F6B88A,stroke:#E8672A,stroke-width:2px,color:#2E1B08
-    classDef c6 fill:#F4A96D,stroke:#E0561A,stroke-width:2px,color:#2A1706
-    class You c1
-    class Watch c2
-    class Ends c3
-    class Sum c4
-    class Log c5
-    class Resume c6
-    linkStyle default stroke:#F3A05E,stroke-width:2px
-```
+![claude-log's turn loop: chat, watch, summarize, log, feed a few recent lines back](docs/flow.svg)
 
 </div>
 
