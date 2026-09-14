@@ -23,7 +23,8 @@ whole history.
    so a crash or interrupt never corrupts another turn's buffer.
 3. On `Stop`, the buffered turn (prompt + assistant messages) plus a
    git-snapshot diff of files touched during the turn are sent to a
-   user-configured OpenAI-compatible summarization endpoint.
+   summarization endpoint — either your own OpenAI-compatible server, or
+   your existing Claude Code login (see Configuration).
 4. The summary is appended as one JSON line to
    `<project>/.claude-log/logs/<session_id>.jsonl`. If summarization fails
    for any reason, an honest `summary_failed` marker is written instead —
@@ -41,6 +42,30 @@ whole history.
 See `SPEC.md` and `docs/specs/core-logging.md` for the full design, and
 `docs/adr/` for the reasoning behind each of these decisions.
 
+## What This Does to Your Machine
+
+Once installed, claude-log runs automatically for **every project** you
+open Claude Code in — there's no per-project opt-in. Concretely, it:
+
+- Writes a small amount of data on every turn: one JSON line per turn to
+  `<project>/.claude-log/logs/<session_id>.jsonl`, plus transient files
+  under `<project>/.claude-log/.buffers/` and `.state/` (cleaned up as
+  part of normal operation).
+- Reads your project's git state (`git status`, `git diff --name-only`,
+  `git hash-object`) to figure out which files a turn touched — it never
+  runs `git commit`, `git push`, or anything that changes your repo.
+- If you configure a summarization endpoint, sends the turn's prompt and
+  assistant messages to it (either your own server, or a `claude -p`
+  subprocess using your existing login — see Configuration). If you
+  don't configure one, nothing leaves your machine; every turn just logs
+  a `summary_failed` marker.
+- Keeps its own settings and operational log at `~/.claude-log/` (see
+  Where Things Live), separate from any project.
+
+It never reads or sends your actual file contents anywhere except your
+own configured summarization endpoint (or your own Claude Code login),
+and never modifies files in your project.
+
 ## Installation
 
 ### Prerequisite
@@ -55,17 +80,27 @@ distribution that provides one (e.g. the Microsoft Store package, or
 WSL). This hasn't been tested on a real Windows machine; if hooks
 silently fail to run there, this is the first thing to check.
 
-### Load the plugin
+### Install through Claude Code (recommended)
 
-claude-log ships as a personal skills-directory plugin, not a per-project
-hook registration — load it once and it applies to every project:
+claude-log ships as a real Claude Code plugin, distributed through its
+own marketplace file (`.claude-plugin/marketplace.json`) in this repo:
+
+```
+claude plugin marketplace add BYZANTINE26/claude-log
+claude plugin install claude-log@claude-log
+```
+
+That's it — no per-project setup, hooks apply to every project on the
+machine from then on.
+
+### Alternative: load without installing
+
+For trying it out or developing on it, load it directly for a single
+session, without registering a marketplace:
 
 ```
 claude --plugin-dir /path/to/claude-log
 ```
-
-(or add it to your persistent plugin configuration so it loads
-automatically on every session).
 
 ## Configuration
 
@@ -76,18 +111,69 @@ first run if absent):
 {
   "enabled": true,
   "recent_context_window": 10,
-  "summarization_endpoint": {
-    "url": "http://localhost:8000/v1/chat/completions",
-    "model": "your-model-name"
-  },
+  "summarization_endpoint": null,
   "log_level": "info"
 }
 ```
 
-`summarization_endpoint` must point at an OpenAI-compatible
-`/v1/chat/completions` endpoint (local or remote). If it's left `null`,
-every turn logs a `summary_failed` marker — there is no rule-based
-fallback, by design (see `docs/adr/0002`).
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `true` | Turn claude-log off entirely (every hook becomes a no-op) without uninstalling it. |
+| `recent_context_window` | `10` | How many past log entries feed into each summarization call. |
+| `summarization_endpoint` | `null` | See below. `null` means every turn logs an honest `summary_failed` marker — there is no rule-based fallback, by design (see `docs/adr/0003`). |
+| `log_level` | `"info"` | `debug`/`info`/`warning`/`error` for `~/.claude-log/internal.log`. |
+
+`summarization_endpoint` has two independent shapes — pick one:
+
+**Your own OpenAI-compatible server** (local model, or any provider
+speaking the `/v1/chat/completions` contract):
+
+```json
+{
+  "summarization_endpoint": {
+    "url": "http://localhost:8000/v1/chat/completions",
+    "model": "your-model-name",
+    "api_key": "optional-bearer-token",
+    "timeout_seconds": 30
+  }
+}
+```
+
+**Through your existing Claude Code login** — no separate server, API
+key, or account:
+
+```json
+{
+  "summarization_endpoint": {
+    "provider": "claude-code",
+    "model": "claude-haiku-4-5-20251001",
+    "timeout_seconds": 60
+  }
+}
+```
+
+This shells out to `claude -p` with `--safe-mode --tools ""` (so it
+can't trigger claude-log's own hooks or take any action) and
+`MAX_THINKING_TOKENS=0` (thinking disabled — has no effect on Fable
+models, which log a warning if configured here). **This has a real,
+recurring usage cost** against your subscription (Pro/Max) or Console
+usage limits, once per summarized turn — it's why this isn't the
+default.
+
+## First-Run Troubleshooting
+
+- **Every entry says `summary_failed: true`.** Expected with no
+  `summarization_endpoint` configured (`null` is the default) — this
+  isn't a bug, it's the honest-failure design (see above). Configure one
+  of the two shapes above to get real summaries.
+- **No `.claude-log/` directory ever appears in a project.** Check the
+  Prerequisite above — on Windows especially, confirm `python3` (not
+  just `python`) resolves on `PATH`. Also check
+  `~/.claude-log/internal.log` for hook errors (set `log_level: "debug"`
+  for more detail).
+- **`claude plugin install` succeeds but nothing gets logged.** Run
+  `claude plugin list` and confirm `claude-log@claude-log` shows
+  `Status: ✔ enabled`.
 
 ## Where Things Live
 
@@ -106,16 +192,28 @@ logs — otherwise claude-log's own writes (e.g. its `.state/` file) will
 show up as "files touched" on whatever turn happens to trigger them, since
 they're genuinely part of the working tree's diff at that point.
 
+**Uninstalling doesn't delete `~/.claude-log/`.** Unlike a plugin's
+`${CLAUDE_PLUGIN_DATA}` directory (which Claude Code cleans up
+automatically on uninstall), claude-log deliberately keeps its config
+and internal log at a fixed, machine-level location independent of the
+plugin's own lifecycle — so your settings survive an uninstall/reinstall.
+Delete `~/.claude-log/` yourself if you want a clean slate.
+
 ## Status
 
 Core Logging is implemented and has passed a full real-world end-to-end
 test (headless sessions, `--resume`, `/clear`, `/compact`,
 `/claude-log-load`, an interrupted turn, and git-snapshot file tracking
-across multi-commit turns and untracked directories). See `CHANGELOG.md`
-for release history and `BACKLOG.md` for known limitations and deferred
-work.
+across multi-commit turns and untracked directories), plus a real
+marketplace install/uninstall cycle. See `CHANGELOG.md` for release
+history and `BACKLOG.md` for known limitations and deferred work.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
 
 ## Contributing
 
 See `~/.claude/CLAUDE.md` for project conventions and workflow (this
 project follows the user-level conventions, not a project-local copy).
+Source: [github.com/BYZANTINE26/claude-log](https://github.com/BYZANTINE26/claude-log).
